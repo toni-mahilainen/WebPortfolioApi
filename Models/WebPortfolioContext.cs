@@ -31,7 +31,7 @@ namespace WebPortfolioCoreApi.Models
         {
             if (!optionsBuilder.IsConfigured)
             {
-                optionsBuilder.UseSqlServer("Server=ASUS-LAPTOP\\SQLDEVTONIMA;Database=WebPortfolio;Trusted_Connection=True;");
+                optionsBuilder.UseSqlServer("Server=ASUS-LAPTOP\\SQLDEVTONIMA;Initial Catalog=WebPortfolio;Persist Security Info=False;User ID=sa;Password=866462Tm;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;");
             }
         }
 

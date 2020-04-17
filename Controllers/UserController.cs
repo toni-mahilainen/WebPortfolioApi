@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using WebPortfolioCoreApi.Models;
 
 namespace WebPortfolioCoreApi.Controllers
 {
@@ -11,5 +12,76 @@ namespace WebPortfolioCoreApi.Controllers
     [ApiController]
     public class UserController : ControllerBase
     {
+        // POST: api/user/
+        // Add new user
+        [HttpPost]
+        [Route("")]
+        public ActionResult AddNewUser([FromBody] Users newUser)
+        {
+            WebPortfolioContext context = new WebPortfolioContext();
+
+            try
+            {
+                context.Users.Add(newUser);
+                context.SaveChanges();
+
+                return Ok("New user has created!");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest("Problem detected while adding a new user. Error message: " + ex.Message);
+            }
+            finally
+            {
+                context.Dispose();
+            }
+
+        }
+
+        // DELETE: api/user/{id}
+        // Delete an account
+        [HttpDelete]
+        [Route("id")]
+        public ActionResult DeleteAccount(int id)
+        {
+            WebPortfolioContext context = new WebPortfolioContext();
+
+            try
+            {
+                return Ok();
+            }
+            catch
+            {
+                return BadRequest();
+            }
+            finally
+            {
+                context.Dispose();
+            }
+
+        }
+
+        // PUT: api/user/{id}
+        // Change user password
+        [HttpPut]
+        [Route("id")]
+        public ActionResult ChangePassword(int id, [FromBody] Users newPassword )
+        {
+            WebPortfolioContext context = new WebPortfolioContext();
+
+            try
+            {
+                return Ok();
+            }
+            catch
+            {
+                return BadRequest();
+            }
+            finally
+            {
+                context.Dispose();
+            }
+
+        }
     }
 }
