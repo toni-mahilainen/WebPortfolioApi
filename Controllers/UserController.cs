@@ -35,7 +35,6 @@ namespace WebPortfolioCoreApi.Controllers
             {
                 context.Dispose();
             }
-
         }
 
         // DELETE: api/user/{id}
@@ -48,10 +47,15 @@ namespace WebPortfolioCoreApi.Controllers
 
             try
             {
+                // Searching right user with ID
                 var user = context.Users.Find(id);
 
-                context.Remove(user);
-                context.SaveChanges();
+                if (user != null)
+                {
+                    context.Remove(user);
+                    context.SaveChanges();
+                }
+                
                 return Ok("Account deleted succesfully!");
             }
             catch (Exception ex)
@@ -64,27 +68,55 @@ namespace WebPortfolioCoreApi.Controllers
             }
         }
 
+        // Checks if old password is written correctly
+        public bool CheckPassword(Users user, string password)
+        {
+            string oldPassword = user.Password;
+
+            if (oldPassword == password)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
         // PUT: api/user/{id}
         // Change user password
         [HttpPut]
-        [Route("id")]
-        public ActionResult ChangePassword(int id, [FromBody] Users newPassword )
+        [Route("{id}")]
+        public ActionResult ChangePassword(int id, [FromBody] Passwords passwords)
         {
             WebPortfolioContext context = new WebPortfolioContext();
 
-            try
-            {
-                return Ok();
-            }
-            catch
-            {
-                return BadRequest();
-            }
-            finally
-            {
-                context.Dispose();
-            }
+            // Searching right user with ID
+            var user = context.Users.Find(id);
 
+            // If old password is correct, password will be changed
+            if (CheckPassword(user, passwords.OldPassword))
+            {
+                try
+                {
+                    user.Password = passwords.NewPassword;
+                    context.SaveChanges();
+
+                    return Ok("Password updated succesfully!");
+                }
+                catch (Exception ex)
+                {
+                    return BadRequest("Problem detected while deleting user. Error message: " + ex.Message);
+                }
+                finally
+                {
+                    context.Dispose();
+                }
+            }
+            else
+            {
+                return NotFound("Wrong old password.");
+            }
         }
     }
 }
