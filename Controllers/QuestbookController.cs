@@ -106,22 +106,31 @@ namespace WebPortfolioCoreApi.Controllers
         // Delete message
         [HttpDelete]
         [Route("{id}")]
-        public ActionResult DeleteAccount(int id)
+        public ActionResult DeleteMessage(int id)
         {
             WebPortfolioContext context = new WebPortfolioContext();
 
             try
             {
-                // Searching right user with ID
-                var user = context.Users.Find(id);
+                // Searching right message with ID
+                var message = context.QuestbookMessages.Find(id);
 
-                if (user != null)
+                // Searching a visitor who wrote the message
+                int visitorId = (from v in context.Visitors
+                                 where v.VisitorId == message.VisitorId
+                                 select v.VisitorId).FirstOrDefault();
+
+                var visitor = context.Visitors.Find(visitorId);
+
+                // Deletion from the database is performed
+                if (message != null && visitor != null)
                 {
-                    context.Remove(user);
+                    context.Remove(message);
+                    context.Remove(visitor);
                     context.SaveChanges();
                 }
 
-                return Ok("Account deleted succesfully!");
+                return Ok("Message deleted succesfully!");
             }
             catch (Exception ex)
             {
