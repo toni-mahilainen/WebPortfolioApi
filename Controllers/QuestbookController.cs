@@ -56,21 +56,45 @@ namespace WebPortfolioCoreApi.Controllers
         // POST: api/questbook/
         // Add new message
         [HttpPost]
-        [Route("")]
-        public ActionResult AddNewMessage([FromBody] Users newUser)
+        [Route("{id}")]
+        public ActionResult AddNewMessage(int id, [FromBody] NewMessage newMessage)
         {
             WebPortfolioContext context = new WebPortfolioContext();
 
             try
             {
-                context.Users.Add(newUser);
+                // Placed visitor info to an object and adding it to database
+                Visitors visitor = new Visitors
+                {
+                    Firstname = newMessage.VisitorFirstname,
+                    Lastname = newMessage.VisitorLastname,
+                    Company = newMessage.VisitorCompany
+                };
+
+                context.Visitors.Add(visitor);
                 context.SaveChanges();
 
-                return Ok("New user has created!");
+                // Searching last added visitor ID and adding other message and other information to database
+                int visitorId = (from v in context.Visitors
+                                 orderby v.VisitorId ascending
+                                 select v.VisitorId).LastOrDefault();
+
+                QuestbookMessages messageAndOthers = new QuestbookMessages
+                {
+                    PortfolioId = id,
+                    VisitorId = visitorId,
+                    Message = newMessage.Message,
+                    VisitationTimestamp = newMessage.VisitationTimestamp
+                };
+                
+                context.QuestbookMessages.Add(messageAndOthers);
+                context.SaveChanges();
+
+                return Ok("New message has saved!");
             }
             catch (Exception ex)
             {
-                return BadRequest("Problem detected while adding a new user. Error message: " + ex.Message);
+                return BadRequest("Problem detected while adding a new message. Error message: " + ex.Message);
             }
             finally
             {
