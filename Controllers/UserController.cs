@@ -41,24 +41,27 @@ namespace WebPortfolioCoreApi.Controllers
         // DELETE: api/user/{id}
         // Delete an account
         [HttpDelete]
-        [Route("id")]
+        [Route("{id}")]
         public ActionResult DeleteAccount(int id)
         {
             WebPortfolioContext context = new WebPortfolioContext();
 
             try
             {
-                return Ok();
+                var user = context.Users.Find(id);
+
+                context.Remove(user);
+                context.SaveChanges();
+                return Ok("Account deleted succesfully!");
             }
-            catch
+            catch (Exception ex)
             {
-                return BadRequest();
+                return BadRequest("Problem detected while deleting user. Error message: " + ex.Message);
             }
             finally
             {
                 context.Dispose();
             }
-
         }
 
         // PUT: api/user/{id}
