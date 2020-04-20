@@ -106,5 +106,66 @@ namespace WebPortfolioCoreApi.Controllers
                 context.Dispose();
             }
         }
+
+        // POST: api/portfoliocontent/{userId}
+        // Add new portfolio content
+        [HttpPost]
+        [Route("{id}")]
+        public ActionResult AddContent(int id, [FromBody] AllContent newContent)
+        {
+            WebPortfolioContext context = new WebPortfolioContext();
+
+            try
+            {
+                // Adding content to database (except emails)
+                PortfolioContent newPortfolio = new PortfolioContent
+                {
+                    UserId = id,
+                    Firstname = newContent.Firstname,
+                    Lastname = newContent.Lastname,
+                    Birthdate = newContent.Birthdate,
+                    City = newContent.City,
+                    Country = newContent.Country,
+                    Phonenumber = newContent.Phonenumber,
+                    Punchline = newContent.Punchline,
+                    BasicKnowledge = newContent.BasicKnowledge,
+                    Education = newContent.Education,
+                    WorkHistory = newContent.WorkHistory,
+                    LanguageSkills = newContent.LanguageSkills
+                };
+
+                context.PortfolioContent.Add(newPortfolio);
+                context.SaveChanges();
+
+                // Adding emails to database
+                // Searching for last added portfolio ID
+                int portfolioId = (from pc in context.PortfolioContent
+                                  orderby pc.PortfolioId ascending
+                                  select pc.PortfolioId).LastOrDefault();
+
+                // Make an array for new email addresses and add them to database
+                var emailsArray = newContent.Emails;
+
+
+                for (int i = 0; i < emailsArray.Length; i++)
+                {
+                    Emails emails = new Emails();
+                    emails.PortfolioId = portfolioId;
+                    emails.EmailAddress = emailsArray[i];
+                    context.Emails.Add(emails);
+                    context.SaveChanges();
+                }
+
+                return Ok("New content has saved!");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest("Problem detected while adding portfolio content for user " + newContent.Firstname + " " + newContent.Lastname + ". Error message: " + ex.InnerException);
+            }
+            finally
+            {
+                context.Dispose();
+            }
+        }
     }
 }

@@ -74,7 +74,7 @@ namespace WebPortfolioCoreApi.Controllers
                 context.Visitors.Add(visitor);
                 context.SaveChanges();
 
-                // Searching last added visitor ID and adding other message and other information to database
+                // Searching for last added visitor ID and adding other message and other information to database
                 int visitorId = (from v in context.Visitors
                                  orderby v.VisitorId ascending
                                  select v.VisitorId).LastOrDefault();
