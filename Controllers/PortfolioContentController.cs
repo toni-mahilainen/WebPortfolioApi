@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using WebPortfolioCoreApi.Models;
+using WebPortfolioCoreApi.OtherModels;
 
 namespace WebPortfolioCoreApi.Controllers
 {
@@ -12,7 +13,7 @@ namespace WebPortfolioCoreApi.Controllers
     [ApiController]
     public class PortfolioContentController : ControllerBase
     {
-        // GET: api/portfoliocontent/content/{portfolioId}
+        // GET: api/portfoliocontent/content/{userId}
         // Get all portfolio content
         [HttpGet]
         [Route("content/{id}")]
@@ -77,7 +78,7 @@ namespace WebPortfolioCoreApi.Controllers
             }
         }
 
-        // GET: api/portfoliocontent/images/{portfolioId}
+        // GET: api/portfoliocontent/images/{userId}
         // Get all users images
         [HttpGet]
         [Route("images/{id}")]
@@ -88,7 +89,7 @@ namespace WebPortfolioCoreApi.Controllers
             try
             {
                 var images = (from i in context.ImageUrls
-                              where i.PortfolioId == id
+                              where i.UserId == id
                               select new 
                               { 
                                   i.TypeId, 
@@ -107,11 +108,71 @@ namespace WebPortfolioCoreApi.Controllers
             }
         }
 
-        // POST: api/portfoliocontent/{userId}
+        // POST: api/portfoliocontent/content/{userId}
         // Add new portfolio content
         [HttpPost]
-        [Route("{id}")]
+        [Route("content/{id}")]
         public ActionResult AddContent(int id, [FromBody] AllContent newContent)
+        {
+            WebPortfolioContext context = new WebPortfolioContext();
+
+            try
+            {
+                // Adding content to database (except emails)
+                PortfolioContent newPortfolio = new PortfolioContent
+                {
+                    UserId = id,
+                    Firstname = newContent.Firstname,
+                    Lastname = newContent.Lastname,
+                    Birthdate = newContent.Birthdate,
+                    City = newContent.City,
+                    Country = newContent.Country,
+                    Phonenumber = newContent.Phonenumber,
+                    Punchline = newContent.Punchline,
+                    BasicKnowledge = newContent.BasicKnowledge,
+                    Education = newContent.Education,
+                    WorkHistory = newContent.WorkHistory,
+                    LanguageSkills = newContent.LanguageSkills
+                };
+
+                context.PortfolioContent.Add(newPortfolio);
+                context.SaveChanges();
+
+                // Adding emails to database
+                // Searching for right portfolio ID
+                int portfolioId = (from pc in context.PortfolioContent
+                                   where pc.UserId == id
+                                   select pc.PortfolioId).FirstOrDefault();
+
+                // Make an array for new email addresses and add them to database
+                var emailsArray = newContent.Emails;
+
+                for (int i = 0; i < emailsArray.Length; i++)
+                {
+                    Emails emails = new Emails();
+                    emails.PortfolioId = portfolioId;
+                    emails.EmailAddress = emailsArray[i];
+                    context.Emails.Add(emails);
+                    context.SaveChanges();
+                }
+
+                return Ok("New content has saved!");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest("Problem detected while adding portfolio content for user " + newContent.Firstname + " " + newContent.Lastname + ". Error message: " + ex.Message);
+            }
+            finally
+            {
+                context.Dispose();
+            }
+        }
+
+        // POST: api/portfoliocontent/images/{userId}
+        // Add new portfolio content
+        [HttpPost]
+        [Route("images/{id}")]
+        public ActionResult AddImages(int id, [FromBody] AllContent newContent)
         {
             WebPortfolioContext context = new WebPortfolioContext();
 
@@ -140,8 +201,8 @@ namespace WebPortfolioCoreApi.Controllers
                 // Adding emails to database
                 // Searching for last added portfolio ID
                 int portfolioId = (from pc in context.PortfolioContent
-                                  orderby pc.PortfolioId ascending
-                                  select pc.PortfolioId).LastOrDefault();
+                                   orderby pc.PortfolioId ascending
+                                   select pc.PortfolioId).LastOrDefault();
 
                 // Make an array for new email addresses and add them to database
                 var emailsArray = newContent.Emails;
@@ -160,7 +221,7 @@ namespace WebPortfolioCoreApi.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest("Problem detected while adding portfolio content for user " + newContent.Firstname + " " + newContent.Lastname + ". Error message: " + ex.InnerException);
+                return BadRequest("Problem detected while adding portfolio content for user " + newContent.Firstname + " " + newContent.Lastname + ". Error message: " + ex.Message);
             }
             finally
             {

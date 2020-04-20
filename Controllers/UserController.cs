@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using WebPortfolioCoreApi.Models;
+using WebPortfolioCoreApi.OtherModels;
 
 namespace WebPortfolioCoreApi.Controllers
 {
