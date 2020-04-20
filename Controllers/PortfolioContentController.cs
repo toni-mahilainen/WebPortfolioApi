@@ -169,59 +169,31 @@ namespace WebPortfolioCoreApi.Controllers
         }
 
         // POST: api/portfoliocontent/images/{userId}
-        // Add new portfolio content
+        // Add users images to database
         [HttpPost]
         [Route("images/{id}")]
-        public ActionResult AddImages(int id, [FromBody] AllContent newContent)
+        public ActionResult AddImages(int id, [FromBody] ImageUrls newImageInfo)
         {
             WebPortfolioContext context = new WebPortfolioContext();
 
             try
             {
-                // Adding content to database (except emails)
-                PortfolioContent newPortfolio = new PortfolioContent
+                // Adds image urls to database
+                ImageUrls newImage = new ImageUrls
                 {
                     UserId = id,
-                    Firstname = newContent.Firstname,
-                    Lastname = newContent.Lastname,
-                    Birthdate = newContent.Birthdate,
-                    City = newContent.City,
-                    Country = newContent.Country,
-                    Phonenumber = newContent.Phonenumber,
-                    Punchline = newContent.Punchline,
-                    BasicKnowledge = newContent.BasicKnowledge,
-                    Education = newContent.Education,
-                    WorkHistory = newContent.WorkHistory,
-                    LanguageSkills = newContent.LanguageSkills
+                    TypeId = newImageInfo.TypeId,
+                    Url = newImageInfo.Url
                 };
 
-                context.PortfolioContent.Add(newPortfolio);
+                context.ImageUrls.Add(newImage);
                 context.SaveChanges();
 
-                // Adding emails to database
-                // Searching for last added portfolio ID
-                int portfolioId = (from pc in context.PortfolioContent
-                                   orderby pc.PortfolioId ascending
-                                   select pc.PortfolioId).LastOrDefault();
-
-                // Make an array for new email addresses and add them to database
-                var emailsArray = newContent.Emails;
-
-
-                for (int i = 0; i < emailsArray.Length; i++)
-                {
-                    Emails emails = new Emails();
-                    emails.PortfolioId = portfolioId;
-                    emails.EmailAddress = emailsArray[i];
-                    context.Emails.Add(emails);
-                    context.SaveChanges();
-                }
-
-                return Ok("New content has saved!");
+                return Ok("New image has saved!");
             }
             catch (Exception ex)
             {
-                return BadRequest("Problem detected while adding portfolio content for user " + newContent.Firstname + " " + newContent.Lastname + ". Error message: " + ex.Message);
+                return BadRequest("Problem detected while adding image for user " + id + ". Error message: " + ex.Message);
             }
             finally
             {
