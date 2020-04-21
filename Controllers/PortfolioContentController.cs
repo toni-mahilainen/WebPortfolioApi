@@ -200,5 +200,93 @@ namespace WebPortfolioCoreApi.Controllers
                 context.Dispose();
             }
         }
+
+        // PUT: api/portfoliocontent/{userId}
+        // Update users portfolio content
+        [HttpPut]
+        [Route("{id}")]
+        public ActionResult UpdateContent(int id, [FromBody] PortfolioContent newContent)
+        {
+            WebPortfolioContext context = new WebPortfolioContext();
+
+            // Searching right portfolio with ID
+            PortfolioContent portfolio = (from pc in context.PortfolioContent
+                                          where pc.UserId == id
+                                          select pc).FirstOrDefault();
+            try
+            {
+                if (portfolio != null)
+                {
+                    portfolio.Firstname = newContent.Firstname;
+                    portfolio.Lastname = newContent.Lastname;
+                    portfolio.Birthdate = newContent.Birthdate;
+                    portfolio.City = newContent.City;
+                    portfolio.Country = newContent.Country;
+                    portfolio.Phonenumber = newContent.Phonenumber;
+                    portfolio.Punchline = newContent.Punchline;
+                    portfolio.BasicKnowledge = newContent.BasicKnowledge;
+                    portfolio.Education = newContent.Education;
+                    portfolio.WorkHistory = newContent.WorkHistory;
+                    portfolio.LanguageSkills = newContent.LanguageSkills;
+                    context.SaveChanges();
+
+                    return Ok("Portfolio updated succesfully!");
+                }
+                else
+                {
+                    return NotFound("Not found any portfolio with user ID: " + id);
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest("Problem detected while updating portfolio content. Error message: " + ex.Message);
+            }
+            finally
+            {
+                context.Dispose();
+            }
+        }
+
+        // PUT: api/portfoliocontent/
+        // Update users email address
+        [HttpPut]
+        [Route("")]
+        public ActionResult UpdateEmails([FromBody] Email email)
+        {
+            WebPortfolioContext context = new WebPortfolioContext();
+
+            try
+            {
+                if (email != null)
+                {
+                    // updating emails to database
+                    //// Searching for right portfolio ID
+                    //int portfolioId = (from pc in context.PortfolioContent
+                    //                   where pc.UserId == id
+                    //                   select pc.PortfolioId).FirstOrDefault();
+
+                    Emails oldEmail = (from e in context.Emails
+                                       where e.EmailId == email.EmailId
+                                       select e).FirstOrDefault();
+
+                    oldEmail.EmailAddress = email.NewEmailAddress;
+                    context.SaveChanges();
+
+                    return Ok("Email address updated succesfully!");
+                }
+                else
+                {
+                    return NotFound("Not found any email with email ID: " + email.EmailId);
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest("Problem detected while updating email address. Error message: " + ex.Message);
+            }
+            finally
+            {
+                context.Dispose();
+            }
+        }
     }
 }
