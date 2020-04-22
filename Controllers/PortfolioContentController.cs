@@ -1,9 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using WebPortfolioCoreApi.Models;
 using WebPortfolioCoreApi.OtherModels;
 
@@ -25,7 +29,7 @@ namespace WebPortfolioCoreApi.Controllers
             {
                 var content = (from pc in context.PortfolioContent
                                where pc.UserId == id
-                               select new 
+                               select new
                                {
                                    pc.Firstname,
                                    pc.Lastname,
@@ -63,8 +67,8 @@ namespace WebPortfolioCoreApi.Controllers
             try
             {
                 var emails = (from e in context.Emails
-                               where e.PortfolioId == id
-                               select e.EmailAddress).ToList();
+                              where e.PortfolioId == id
+                              select e.EmailAddress).ToList();
 
                 return Ok(emails);
             }
@@ -90,10 +94,10 @@ namespace WebPortfolioCoreApi.Controllers
             {
                 var images = (from i in context.ImageUrls
                               where i.UserId == id
-                              select new 
-                              { 
-                                  i.TypeId, 
-                                  i.Url 
+                              select new
+                              {
+                                  i.TypeId,
+                                  i.Url
                               }).ToList();
 
                 return Ok(images);
@@ -149,9 +153,11 @@ namespace WebPortfolioCoreApi.Controllers
 
                 for (int i = 0; i < emailsArray.Length; i++)
                 {
-                    Emails emails = new Emails();
-                    emails.PortfolioId = portfolioId;
-                    emails.EmailAddress = emailsArray[i];
+                    Emails emails = new Emails
+                    {
+                        PortfolioId = portfolioId,
+                        EmailAddress = emailsArray[i]
+                    };
                     context.Emails.Add(emails);
                     context.SaveChanges();
                 }
@@ -201,10 +207,10 @@ namespace WebPortfolioCoreApi.Controllers
             }
         }
 
-        // PUT: api/portfoliocontent/{userId}
+        // PUT: api/portfoliocontent/content/{userId}
         // Update users portfolio content
         [HttpPut]
-        [Route("{id}")]
+        [Route("content/{id}")]
         public ActionResult UpdateContent(int id, [FromBody] PortfolioContent newContent)
         {
             WebPortfolioContext context = new WebPortfolioContext();
@@ -251,7 +257,7 @@ namespace WebPortfolioCoreApi.Controllers
         // Update users email address
         [HttpPut]
         [Route("")]
-        public ActionResult UpdateEmails([FromBody] Email email)
+        public ActionResult UpdateEmail([FromBody] Email email)
         {
             WebPortfolioContext context = new WebPortfolioContext();
 
@@ -260,11 +266,6 @@ namespace WebPortfolioCoreApi.Controllers
                 if (email != null)
                 {
                     // updating emails to database
-                    //// Searching for right portfolio ID
-                    //int portfolioId = (from pc in context.PortfolioContent
-                    //                   where pc.UserId == id
-                    //                   select pc.PortfolioId).FirstOrDefault();
-
                     Emails oldEmail = (from e in context.Emails
                                        where e.EmailId == email.EmailId
                                        select e).FirstOrDefault();
@@ -282,6 +283,62 @@ namespace WebPortfolioCoreApi.Controllers
             catch (Exception ex)
             {
                 return BadRequest("Problem detected while updating email address. Error message: " + ex.Message);
+            }
+            finally
+            {
+                context.Dispose();
+            }
+        }
+
+        // PUT: api/portfoliocontent/images/{userId}
+        // Update users images
+        [HttpPut]
+        [Route("images/{id}")]
+        public ActionResult UpdateImages(int id, [FromBody] JsonElement jsonElement)
+        {
+            WebPortfolioContext context = new WebPortfolioContext();
+            
+            // Converts json element to string
+            string json = System.Text.Json.JsonSerializer.Serialize(jsonElement);
+
+            // Converts json string to dataset
+            DataSet dataSet = JsonConvert.DeserializeObject<DataSet>(json);
+
+            try
+            {
+                if (dataSet != null)
+                {
+                    // Get through every table from dataset
+                    // Tables includes type ID and new URL for image
+                    foreach (DataTable dataTable in dataSet.Tables)
+                    {
+                        DataRow row = dataTable.Rows[0];
+
+                        int typeId = int.Parse(row["TypeID"].ToString());
+                        string newUrl = row["Url"].ToString();
+
+                        ImageUrls oldImage = (from iu in context.ImageUrls
+                                              where iu.UserId == id && iu.TypeId == typeId
+                                              select iu).FirstOrDefault();
+
+                        // If image url has changed, it will be updated to database
+                        if (newUrl != oldImage.Url)
+                        {
+                            oldImage.Url = newUrl;
+                            context.SaveChanges();
+                        }
+                    }
+
+                    return Ok("Images updated succesfully!");
+                }
+                else
+                {
+                    return NotFound("Content not found.");
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest("Problem detected while updating images. Error message: " + ex.Message);
             }
             finally
             {
