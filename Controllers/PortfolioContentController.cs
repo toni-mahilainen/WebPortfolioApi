@@ -207,6 +207,58 @@ namespace WebPortfolioCoreApi.Controllers
             }
         }
 
+        // POST: api/portfoliocontent/skills/{userId}
+        // Add users images to database
+        [HttpPost]
+        [Route("images/{id}")]
+        public ActionResult AddSkill(int id, [FromBody] string json)
+        {
+            WebPortfolioContext context = new WebPortfolioContext();
+
+            var obj = JsonConvert.DeserializeObject<JObject>(json);
+
+            try
+            {
+                // Adds new skill to database
+                Skills skill = new Skills
+                {
+                    UserId = id,
+                    Skill = obj["Skill"]["SkillName"].ToString(),
+                    SkillLevel = int.Parse(obj["Skill"]["SkillLevel"].ToString())
+                };
+
+                context.Skills.Add(skill);
+                context.SaveChanges();
+
+                int skillId = (from s in context.Skills
+                               where s.UserId == id
+                               orderby s.UserId ascending
+                               select s.SkillId).LastOrDefault();
+
+                string projectsArray = obj["Projects"].ToString();
+
+                for (int i = 0; i < projectsArray.Length; i++)
+                {
+                    Projects project = new Projects
+                    {
+                        Name = obj["Projects"][i]["Name"].ToString(),
+                        Link = obj["Projects"][i]["Link"].ToString(),
+                        Description = obj["Projects"][i]["Description"].ToString()
+                    };
+                }
+
+                return Ok("New skill has saved!");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest("Problem detected while adding image for user " + id + ". Error message: " + ex.Message);
+            }
+            finally
+            {
+                context.Dispose();
+            }
+        }
+
         // PUT: api/portfoliocontent/content/{userId}
         // Update users portfolio content
         [HttpPut]
@@ -384,7 +436,7 @@ namespace WebPortfolioCoreApi.Controllers
                     {
                         int messageId = messageIdArray[i];
 
-                        QuestbookController.DeleteMessage(messageId);
+                        QuestbookController.DeleteAllMessages(messageId);
                     }
 
                     context.Remove(portfolio);

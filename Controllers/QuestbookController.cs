@@ -107,7 +107,7 @@ namespace WebPortfolioCoreApi.Controllers
         // Delete message
         [HttpDelete]
         [Route("{id}")]
-        static public ActionResult DeleteMessage(int id)
+        public ActionResult DeleteMessage(int id)
         {
             WebPortfolioContext context = new WebPortfolioContext();
 
@@ -136,6 +136,43 @@ namespace WebPortfolioCoreApi.Controllers
             catch (Exception ex)
             {
                 return BadRequest("Problem detected while deleting user. Error message: " + ex.Message);
+            }
+            finally
+            {
+                context.Dispose();
+            }
+        }
+
+        // Delete all message
+        static public bool DeleteAllMessages(int id)
+        {
+            WebPortfolioContext context = new WebPortfolioContext();
+
+            try
+            {
+                // Searching right message with ID
+                var message = context.QuestbookMessages.Find(id);
+
+                // Searching a visitor who wrote the message
+                int visitorId = (from v in context.Visitors
+                                 where v.VisitorId == message.VisitorId
+                                 select v.VisitorId).FirstOrDefault();
+
+                var visitor = context.Visitors.Find(visitorId);
+
+                // Deletion from the database is performed
+                if (message != null && visitor != null)
+                {
+                    context.Remove(message);
+                    context.Remove(visitor);
+                    context.SaveChanges();
+                }
+
+                return true;
+            }
+            catch
+            {
+                return false;
             }
             finally
             {
