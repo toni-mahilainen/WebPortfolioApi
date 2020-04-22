@@ -13,7 +13,7 @@ namespace WebPortfolioCoreApi.Controllers
     [ApiController]
     public class QuestbookController : ControllerBase
     {
-        // GET: api/questbook/
+        // GET: api/questbook/{userId}
         // Get all visitors + messages
         [HttpGet]
         [Route("{id}")]
@@ -54,7 +54,7 @@ namespace WebPortfolioCoreApi.Controllers
             }
         }
 
-        // POST: api/questbook/
+        // POST: api/questbook/{portfolioId}
         // Add new message
         [HttpPost]
         [Route("{id}")]
@@ -103,11 +103,11 @@ namespace WebPortfolioCoreApi.Controllers
             }
         }
 
-        // DELETE: api/questbook/{id}
+        // DELETE: api/questbook/{messageId}
         // Delete message
         [HttpDelete]
         [Route("{id}")]
-        public ActionResult DeleteMessage(int id)
+        static public ActionResult DeleteMessage(int id)
         {
             WebPortfolioContext context = new WebPortfolioContext();
 

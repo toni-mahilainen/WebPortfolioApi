@@ -297,7 +297,7 @@ namespace WebPortfolioCoreApi.Controllers
         public ActionResult UpdateImages(int id, [FromBody] JsonElement jsonElement)
         {
             WebPortfolioContext context = new WebPortfolioContext();
-            
+
             // Converts json element to string
             string json = System.Text.Json.JsonSerializer.Serialize(jsonElement);
 
@@ -339,6 +339,63 @@ namespace WebPortfolioCoreApi.Controllers
             catch (Exception ex)
             {
                 return BadRequest("Problem detected while updating images. Error message: " + ex.Message);
+            }
+            finally
+            {
+                context.Dispose();
+            }
+        }
+
+        // DELETE: api/portfoliocontent/{userId}
+        // Delete users portfolio content
+        [HttpDelete]
+        [Route("{id}")]
+        public ActionResult DeleteContent(int id)
+        {
+            WebPortfolioContext context = new WebPortfolioContext();
+
+            try
+            {
+                // Searching right portfolio with user ID
+                PortfolioContent portfolio = (from pc in context.PortfolioContent
+                                              where pc.UserId == id
+                                              select pc).FirstOrDefault();
+                if (portfolio != null)
+                {
+                    // Searching right emails with portfolio ID
+                    var emailIdArray = (from e in context.Emails
+                                        where e.PortfolioId == portfolio.PortfolioId
+                                        select e.EmailId).ToArray();
+
+                    for (int i = 0; i < emailIdArray.Length; i++)
+                    {
+                        Emails email = context.Emails.Find(emailIdArray[i]);
+
+                        context.Remove(email);
+                        context.SaveChanges();
+                    }
+
+                    // Searching right questbook messages with portfolio ID
+                    var messageIdArray = (from qm in context.QuestbookMessages
+                                          where qm.PortfolioId == portfolio.PortfolioId
+                                          select qm.MessageId).ToArray();
+
+                    for (int i = 0; i < messageIdArray.Length; i++)
+                    {
+                        int messageId = messageIdArray[i];
+
+                        QuestbookController.DeleteMessage(messageId);
+                    }
+
+                    context.Remove(portfolio);
+                    context.SaveChanges();
+                }
+
+                return Ok("Content deleted succesfully!");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest("Problem detected while deleting portfolio. Error message: " + ex.Message);
             }
             finally
             {

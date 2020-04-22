@@ -53,7 +53,7 @@ namespace WebPortfolioCoreApi.Controllers
             }
         }
 
-        // PUT: api/user/{id}
+        // PUT: api/user/{userId}
         // Change user password
         [HttpPut]
         [Route("{id}")]
@@ -89,7 +89,7 @@ namespace WebPortfolioCoreApi.Controllers
             }
         }
 
-        // DELETE: api/user/{id}
+        // DELETE: api/user/{userId}
         // Delete an account
         [HttpDelete]
         [Route("{id}")]
