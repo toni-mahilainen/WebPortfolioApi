@@ -50,7 +50,7 @@ namespace WebPortfolioCoreApi.Controllers
         // Add users skills to database
         [HttpPost]
         [Route("{id}")]
-        public ActionResult AddSkill(int id, [FromBody] JsonElement jsonElement)
+        public ActionResult AddSkillAndProjects(int id, [FromBody] JsonElement jsonElement)
         {
             WebPortfolioContext context = new WebPortfolioContext();
 

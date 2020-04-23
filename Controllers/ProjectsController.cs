@@ -37,5 +37,39 @@ namespace WebPortfolioCoreApi.Controllers
                 context.Dispose();
             }
         }
+
+        // POST: api/projects/{skillId}
+        // Add new project for specific skill
+        [HttpPost]
+        [Route("{id}")]
+        public ActionResult AddProject(int id, [FromBody] Projects newProject)
+        {
+            WebPortfolioContext context = new WebPortfolioContext();
+
+            try
+            {
+                // Placed visitor info to an object and adding it to database
+                Projects project = new Projects
+                {
+                    SkillId = id,
+                    Name = newProject.Name,
+                    Link = newProject.Link,
+                    Description = newProject.Description
+                };
+
+                context.Projects.Add(project);
+                context.SaveChanges();
+
+                return Ok("New project has added to project!");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest("Problem detected while adding a new project. Error message: " + ex.Message);
+            }
+            finally
+            {
+                context.Dispose();
+            }
+        }
     }
 }
