@@ -207,14 +207,18 @@ namespace WebPortfolioCoreApi.Controllers
             }
         }
 
-        // POST: api/portfoliocontent/skills/{userId}
-        // Add users images to database
+        // POST: api/portfoliocontent/skill/{userId}
+        // Add users skills to database
         [HttpPost]
-        [Route("images/{id}")]
-        public ActionResult AddSkill(int id, [FromBody] string json)
+        [Route("skill/{id}")]
+        public ActionResult AddSkill(int id, [FromBody] JsonElement jsonElement)
         {
             WebPortfolioContext context = new WebPortfolioContext();
 
+            // Converts json element to string
+            string json = System.Text.Json.JsonSerializer.Serialize(jsonElement);
+
+            // Converts json string to JSON object
             var obj = JsonConvert.DeserializeObject<JObject>(json);
 
             try
@@ -230,21 +234,28 @@ namespace WebPortfolioCoreApi.Controllers
                 context.Skills.Add(skill);
                 context.SaveChanges();
 
+                // Get last added skill ID for specific user
                 int skillId = (from s in context.Skills
                                where s.UserId == id
-                               orderby s.UserId ascending
-                               select s.SkillId).LastOrDefault();
+                               orderby s.SkillId ascending
+                               select s.SkillId).Last();
 
-                string projectsArray = obj["Projects"].ToString();
+                // Converts nested "Projects" JSON object to array and save count of an array to variable
+                var projectsArray = obj["Projects"].ToArray();
+                int arrayCount = projectsArray.Count();
 
-                for (int i = 0; i < projectsArray.Length; i++)
+                // Adds as many projects as the count of an array indicates
+                for (int i = 0; i < arrayCount; i++)
                 {
                     Projects project = new Projects
                     {
+                        SkillId = skillId,
                         Name = obj["Projects"][i]["Name"].ToString(),
                         Link = obj["Projects"][i]["Link"].ToString(),
                         Description = obj["Projects"][i]["Description"].ToString()
                     };
+                    context.Projects.Add(project);
+                    context.SaveChanges();
                 }
 
                 return Ok("New skill has saved!");
