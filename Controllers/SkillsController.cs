@@ -109,8 +109,8 @@ namespace WebPortfolioCoreApi.Controllers
             }
         }
 
-        // PUT: api/images/{skillId}
-        // Update users images
+        // PUT: api/skills/{skillId}
+        // Update users skills
         [HttpPut]
         [Route("{id}")]
         public ActionResult UpdateSkill(int id, [FromBody] Skills newSkill)
@@ -132,6 +132,54 @@ namespace WebPortfolioCoreApi.Controllers
             catch (Exception ex)
             {
                 return BadRequest("Problem detected while updating a skill. Skill ID: " + id + ". Error message: " + ex.Message);
+            }
+            finally
+            {
+                context.Dispose();
+            }
+        }
+
+        // DELETE: api/skills/{skillId}
+        // Delete a skill
+        [HttpDelete]
+        [Route("{id}")]
+        public ActionResult DeleteSkill(int id)
+        {
+            WebPortfolioContext context = new WebPortfolioContext();
+
+            try
+            {
+                // Removes all projects of the skill
+                Projects project = null;
+
+                do
+                {
+                    project = (from p in context.Projects
+                               where p.SkillId == id
+                               select p).FirstOrDefault();
+
+                    if (project != null)
+                    {
+                        context.Remove(project);
+                        context.SaveChanges();
+                    }
+
+                } while (project != null);
+
+                // Removes the skill
+                var skill = context.Skills.Find(id);
+
+                if (skill != null)
+                {
+                    context.Remove(skill);
+                    context.SaveChanges();
+                }
+
+                return Ok("Skill deleted succesfully!");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest("Problem detected while deleting skill. Error message: " + ex.Message);
             }
             finally
             {
