@@ -7,6 +7,7 @@ namespace WebPortfolioCoreApi.Models
     {
         public Users()
         {
+            ImageUrls = new HashSet<ImageUrls>();
             PortfolioContent = new HashSet<PortfolioContent>();
             Skills = new HashSet<Skills>();
         }
@@ -15,6 +16,7 @@ namespace WebPortfolioCoreApi.Models
         public string Username { get; set; }
         public string Password { get; set; }
 
+        public virtual ICollection<ImageUrls> ImageUrls { get; set; }
         public virtual ICollection<PortfolioContent> PortfolioContent { get; set; }
         public virtual ICollection<Skills> Skills { get; set; }
     }

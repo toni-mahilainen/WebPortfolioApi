@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using WebPortfolioCoreApi.Models;
+using WebPortfolioCoreApi.OtherModels;
 
 namespace WebPortfolioCoreApi.Controllers
 {
@@ -12,7 +13,7 @@ namespace WebPortfolioCoreApi.Controllers
     [ApiController]
     public class QuestbookController : ControllerBase
     {
-        // GET: api/questbook/
+        // GET: api/questbook/{userId}
         // Get all visitors + messages
         [HttpGet]
         [Route("{id}")]
@@ -53,7 +54,7 @@ namespace WebPortfolioCoreApi.Controllers
             }
         }
 
-        // POST: api/questbook/
+        // POST: api/questbook/{portfolioId}
         // Add new message
         [HttpPost]
         [Route("{id}")]
@@ -74,7 +75,7 @@ namespace WebPortfolioCoreApi.Controllers
                 context.Visitors.Add(visitor);
                 context.SaveChanges();
 
-                // Searching last added visitor ID and adding other message and other information to database
+                // Searching for last added visitor ID and adding other message and other information to database
                 int visitorId = (from v in context.Visitors
                                  orderby v.VisitorId ascending
                                  select v.VisitorId).LastOrDefault();
@@ -102,7 +103,7 @@ namespace WebPortfolioCoreApi.Controllers
             }
         }
 
-        // DELETE: api/questbook/{id}
+        // DELETE: api/questbook/{messageId}
         // Delete message
         [HttpDelete]
         [Route("{id}")]
@@ -135,6 +136,43 @@ namespace WebPortfolioCoreApi.Controllers
             catch (Exception ex)
             {
                 return BadRequest("Problem detected while deleting user. Error message: " + ex.Message);
+            }
+            finally
+            {
+                context.Dispose();
+            }
+        }
+
+        // Delete all message
+        static public bool DeleteAllMessages(int id)
+        {
+            WebPortfolioContext context = new WebPortfolioContext();
+
+            try
+            {
+                // Searching right message with ID
+                var message = context.QuestbookMessages.Find(id);
+
+                // Searching a visitor who wrote the message
+                int visitorId = (from v in context.Visitors
+                                 where v.VisitorId == message.VisitorId
+                                 select v.VisitorId).FirstOrDefault();
+
+                var visitor = context.Visitors.Find(visitorId);
+
+                // Deletion from the database is performed
+                if (message != null && visitor != null)
+                {
+                    context.Remove(message);
+                    context.Remove(visitor);
+                    context.SaveChanges();
+                }
+
+                return true;
+            }
+            catch
+            {
+                return false;
             }
             finally
             {

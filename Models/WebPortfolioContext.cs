@@ -73,25 +73,25 @@ namespace WebPortfolioCoreApi.Models
 
                 entity.Property(e => e.UrlId).HasColumnName("UrlID");
 
-                entity.Property(e => e.PortfolioId).HasColumnName("PortfolioID");
-
                 entity.Property(e => e.TypeId).HasColumnName("TypeID");
 
                 entity.Property(e => e.Url)
                     .IsRequired()
                     .HasMaxLength(100);
 
-                entity.HasOne(d => d.Portfolio)
-                    .WithMany(p => p.ImageUrls)
-                    .HasForeignKey(d => d.PortfolioId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_ImageUrls_PortfolioContent");
+                entity.Property(e => e.UserId).HasColumnName("UserID");
 
                 entity.HasOne(d => d.Type)
                     .WithMany(p => p.ImageUrls)
                     .HasForeignKey(d => d.TypeId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_ImageUrls_ImageTypes");
+
+                entity.HasOne(d => d.User)
+                    .WithMany(p => p.ImageUrls)
+                    .HasForeignKey(d => d.UserId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ImageUrls_Users");
             });
 
             modelBuilder.Entity<PortfolioContent>(entity =>

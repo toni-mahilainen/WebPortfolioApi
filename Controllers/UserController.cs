@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using WebPortfolioCoreApi.Models;
+using WebPortfolioCoreApi.OtherModels;
 
 namespace WebPortfolioCoreApi.Controllers
 {
@@ -37,37 +38,6 @@ namespace WebPortfolioCoreApi.Controllers
             }
         }
 
-        // DELETE: api/user/{id}
-        // Delete an account
-        [HttpDelete]
-        [Route("{id}")]
-        public ActionResult DeleteAccount(int id)
-        {
-            WebPortfolioContext context = new WebPortfolioContext();
-
-            try
-            {
-                // Searching right user with ID
-                var user = context.Users.Find(id);
-
-                if (user != null)
-                {
-                    context.Remove(user);
-                    context.SaveChanges();
-                }
-                
-                return Ok("Account deleted succesfully!");
-            }
-            catch (Exception ex)
-            {
-                return BadRequest("Problem detected while deleting user. Error message: " + ex.Message);
-            }
-            finally
-            {
-                context.Dispose();
-            }
-        }
-
         // Checks if old password is written correctly
         public bool CheckPassword(Users user, string password)
         {
@@ -83,7 +53,7 @@ namespace WebPortfolioCoreApi.Controllers
             }
         }
 
-        // PUT: api/user/{id}
+        // PUT: api/user/{userId}
         // Change user password
         [HttpPut]
         [Route("{id}")]
@@ -116,6 +86,37 @@ namespace WebPortfolioCoreApi.Controllers
             else
             {
                 return NotFound("Wrong old password.");
+            }
+        }
+
+        // DELETE: api/user/{userId}
+        // Delete an account
+        [HttpDelete]
+        [Route("{id}")]
+        public ActionResult DeleteAccount(int id)
+        {
+            WebPortfolioContext context = new WebPortfolioContext();
+
+            try
+            {
+                // Searching right user with ID
+                var user = context.Users.Find(id);
+
+                if (user != null)
+                {
+                    context.Remove(user);
+                    context.SaveChanges();
+                }
+
+                return Ok("Account deleted succesfully!");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest("Problem detected while deleting user. Error message: " + ex.Message);
+            }
+            finally
+            {
+                context.Dispose();
             }
         }
     }
