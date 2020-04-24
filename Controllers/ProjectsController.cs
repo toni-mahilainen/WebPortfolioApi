@@ -114,7 +114,6 @@ namespace WebPortfolioCoreApi.Controllers
 
             try
             {
-                // Removes the skill
                 var project = context.Projects.Find(id);
 
                 if (project != null)
