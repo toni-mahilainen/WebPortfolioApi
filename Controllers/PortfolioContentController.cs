@@ -253,12 +253,15 @@ namespace WebPortfolioCoreApi.Controllers
 
                     int emailArrayCount = emailIdArray.Count();
 
-                    for (int i = 0; i < emailIdArray.Length; i++)
+                    if (emailArrayCount > 0)
                     {
-                        Emails email = context.Emails.Find(emailIdArray[i]);
+                        for (int i = 0; i < emailIdArray.Length; i++)
+                        {
+                            Emails email = context.Emails.Find(emailIdArray[i]);
 
-                        context.Remove(email);
-                        context.SaveChanges();
+                            context.Remove(email);
+                            context.SaveChanges();
+                        }
                     }
 
                     // Searching right questbook messages with portfolio ID
@@ -268,15 +271,18 @@ namespace WebPortfolioCoreApi.Controllers
 
                     int messageArrayCount = messageIdArray.Count();
 
-                    for (int i = 0; i < messageArrayCount;)
+                    if (messageArrayCount > 0)
                     {
-                        int messageId = messageIdArray[i];
-
-                        messageBool = QuestbookController.DeleteAllMessages(messageId);
-
-                        if (messageBool)
+                        for (int i = 0; i < messageArrayCount;)
                         {
-                            i++;
+                            int messageId = messageIdArray[i];
+
+                            messageBool = QuestbookController.DeleteAllMessages(messageId);
+
+                            if (messageBool)
+                            {
+                                i++;
+                            }
                         }
                     }
 
@@ -287,15 +293,18 @@ namespace WebPortfolioCoreApi.Controllers
 
                     int urlArrayCount = messageIdArray.Count();
 
-                    for (int i = 0; i < urlArrayCount;)
+                    if (urlArrayCount > 0)
                     {
-                        int urlId = imageIdArray[i];
-
-                        imageBool = ImagesController.DeleteAllImages(urlId);
-
-                        if (imageBool)
+                        for (int i = 0; i < urlArrayCount;)
                         {
-                            i++;
+                            int urlId = imageIdArray[i];
+
+                            imageBool = ImagesController.DeleteAllImages(urlId);
+
+                            if (imageBool)
+                            {
+                                i++;
+                            }
                         }
                     }
 
@@ -306,15 +315,18 @@ namespace WebPortfolioCoreApi.Controllers
 
                     int linkArrayCount = linkIdArray.Count();
 
-                    for (int i = 0; i < linkArrayCount;)
+                    if (linkArrayCount > 0)
                     {
-                        int linkId = linkIdArray[i];
-
-                        linkBool = SocialMediaController.DeleteAllLinks(linkId);
-
-                        if (linkBool)
+                        for (int i = 0; i < linkArrayCount;)
                         {
-                            i++;
+                            int linkId = linkIdArray[i];
+
+                            linkBool = SocialMediaController.DeleteAllLinks(linkId);
+
+                            if (linkBool)
+                            {
+                                i++;
+                            }
                         }
                     }
 
@@ -325,15 +337,18 @@ namespace WebPortfolioCoreApi.Controllers
 
                     int skillArrayCount = skillIdArray.Count();
 
-                    for (int i = 0; i < skillArrayCount;)
+                    if (skillArrayCount > 0)
                     {
-                        int skillId = skillIdArray[i];
-
-                        skillBool = SkillsController.DeleteAllSkillAndProjects(skillId);
-
-                        if (skillBool)
+                        for (int i = 0; i < skillArrayCount;)
                         {
-                            i++;
+                            int skillId = skillIdArray[i];
+
+                            skillBool = SkillsController.DeleteAllSkillAndProjects(skillId);
+
+                            if (skillBool)
+                            {
+                                i++;
+                            }
                         }
                     }
 

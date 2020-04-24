@@ -99,16 +99,19 @@ namespace WebPortfolioCoreApi.Controllers
 
             try
             {
-                // Searching right user with ID
-                var user = context.Users.Find(id);
-
-                if (user != null)
+                if (id != 0)
                 {
-                    context.Remove(user);
-                    context.SaveChanges();
+                    if (PortfolioContentController.DeletePortfolio(id))
+                    {
+                        // Searching right user with ID
+                        var user = context.Users.Find(id);
+
+                        context.Remove(user);
+                        context.SaveChanges();
+                    }
                 }
 
-                return Ok("Account deleted succesfully!");
+                return Ok("Account and all content has deleted succesfully!");
             }
             catch (Exception ex)
             {
