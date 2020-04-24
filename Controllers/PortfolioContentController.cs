@@ -227,56 +227,146 @@ namespace WebPortfolioCoreApi.Controllers
             }
         }
 
-        // DELETE: api/portfoliocontent/{userId}
-        // Delete users portfolio content
-        [HttpDelete]
-        [Route("{id}")]
-        public ActionResult DeleteContent(int id)
+        // Delete users portfolio and all content
+        static public bool DeletePortfolio(int id)
         {
             WebPortfolioContext context = new WebPortfolioContext();
 
             try
             {
                 // Searching right portfolio with user ID
-                PortfolioContent portfolio = (from pc in context.PortfolioContent
-                                              where pc.UserId == id
-                                              select pc).FirstOrDefault();
-                if (portfolio != null)
+                int portfolioId = (from pc in context.PortfolioContent
+                                   where pc.UserId == id
+                                   select pc.PortfolioId).FirstOrDefault();
+
+                if (portfolioId != 0)
                 {
+                    bool messageBool;
+                    bool imageBool;
+                    bool linkBool;
+                    bool skillBool;
+
                     // Searching right emails with portfolio ID
                     var emailIdArray = (from e in context.Emails
-                                        where e.PortfolioId == portfolio.PortfolioId
+                                        where e.PortfolioId == portfolioId
                                         select e.EmailId).ToArray();
 
-                    for (int i = 0; i < emailIdArray.Length; i++)
-                    {
-                        Emails email = context.Emails.Find(emailIdArray[i]);
+                    int emailArrayCount = emailIdArray.Count();
 
-                        context.Remove(email);
-                        context.SaveChanges();
+                    if (emailArrayCount > 0)
+                    {
+                        for (int i = 0; i < emailIdArray.Length; i++)
+                        {
+                            Emails email = context.Emails.Find(emailIdArray[i]);
+
+                            context.Remove(email);
+                            context.SaveChanges();
+                        }
                     }
 
                     // Searching right questbook messages with portfolio ID
                     var messageIdArray = (from qm in context.QuestbookMessages
-                                          where qm.PortfolioId == portfolio.PortfolioId
+                                          where qm.PortfolioId == portfolioId
                                           select qm.MessageId).ToArray();
 
-                    for (int i = 0; i < messageIdArray.Length; i++)
-                    {
-                        int messageId = messageIdArray[i];
+                    int messageArrayCount = messageIdArray.Count();
 
-                        QuestbookController.DeleteAllMessages(messageId);
+                    if (messageArrayCount > 0)
+                    {
+                        for (int i = 0; i < messageArrayCount;)
+                        {
+                            int messageId = messageIdArray[i];
+
+                            messageBool = QuestbookController.DeleteAllMessages(messageId);
+
+                            if (messageBool)
+                            {
+                                i++;
+                            }
+                        }
                     }
 
-                    context.Remove(portfolio);
-                    context.SaveChanges();
+                    // Searching images with user ID
+                    var imageIdArray = (from iu in context.ImageUrls
+                                        where iu.UserId == id
+                                        select iu.UrlId).ToArray();
+
+                    int urlArrayCount = messageIdArray.Count();
+
+                    if (urlArrayCount > 0)
+                    {
+                        for (int i = 0; i < urlArrayCount;)
+                        {
+                            int urlId = imageIdArray[i];
+
+                            imageBool = ImagesController.DeleteAllImages(urlId);
+
+                            if (imageBool)
+                            {
+                                i++;
+                            }
+                        }
+                    }
+
+                    // Searching social media links with portfolio ID
+                    var linkIdArray = (from sml in context.SocialMediaLinks
+                                        where sml.PortfolioId == portfolioId
+                                        select sml.LinkId).ToArray();
+
+                    int linkArrayCount = linkIdArray.Count();
+
+                    if (linkArrayCount > 0)
+                    {
+                        for (int i = 0; i < linkArrayCount;)
+                        {
+                            int linkId = linkIdArray[i];
+
+                            linkBool = SocialMediaController.DeleteAllLinks(linkId);
+
+                            if (linkBool)
+                            {
+                                i++;
+                            }
+                        }
+                    }
+
+                    // Searching social media links with portfolio ID
+                    var skillIdArray = (from s in context.Skills
+                                       where s.UserId == id
+                                       select s.SkillId).ToArray();
+
+                    int skillArrayCount = skillIdArray.Count();
+
+                    if (skillArrayCount > 0)
+                    {
+                        for (int i = 0; i < skillArrayCount;)
+                        {
+                            int skillId = skillIdArray[i];
+
+                            skillBool = SkillsController.DeleteAllSkillAndProjects(skillId);
+
+                            if (skillBool)
+                            {
+                                i++;
+                            }
+                        }
+                    }
+
+                    // At the end, search the right portfolio and remove it
+                    if ((messageBool = true) && (imageBool = true) && (linkBool = true) && (skillBool = true))
+                    {
+                        PortfolioContent portfolio = context.PortfolioContent.Find(portfolioId);
+
+                        context.Remove(portfolio);
+                        context.SaveChanges();
+                    }
                 }
 
-                return Ok("Content deleted succesfully!");
+                return true;
             }
-            catch (Exception ex)
+            catch
             {
-                return BadRequest("Problem detected while deleting portfolio. Error message: " + ex.Message);
+                return false;
             }
             finally
             {

@@ -50,7 +50,7 @@ namespace WebPortfolioCoreApi.Controllers
         // Add users skills to database
         [HttpPost]
         [Route("{id}")]
-        public ActionResult AddSkillAndProjects(int id, [FromBody] JsonElement jsonElement)
+        public ActionResult AddSkill(int id, [FromBody] JsonElement jsonElement)
         {
             WebPortfolioContext context = new WebPortfolioContext();
 
@@ -143,7 +143,7 @@ namespace WebPortfolioCoreApi.Controllers
         // Delete a skill
         [HttpDelete]
         [Route("{id}")]
-        public ActionResult DeleteSkillAndProjects(int id)
+        public ActionResult DeleteSkill(int id)
         {
             WebPortfolioContext context = new WebPortfolioContext();
 
@@ -180,6 +180,50 @@ namespace WebPortfolioCoreApi.Controllers
             catch (Exception ex)
             {
                 return BadRequest("Problem detected while deleting skill. Error message: " + ex.Message);
+            }
+            finally
+            {
+                context.Dispose();
+            }
+        }
+
+        static public bool DeleteAllSkillAndProjects(int id)
+        {
+            WebPortfolioContext context = new WebPortfolioContext();
+
+            try
+            {
+                // Removes all projects of the skill
+                Projects project = null;
+
+                do
+                {
+                    project = (from p in context.Projects
+                               where p.SkillId == id
+                               select p).FirstOrDefault();
+
+                    if (project != null)
+                    {
+                        context.Remove(project);
+                        context.SaveChanges();
+                    }
+
+                } while (project != null);
+
+                // Removes the skill
+                var skill = context.Skills.Find(id);
+
+                if (skill != null)
+                {
+                    context.Remove(skill);
+                    context.SaveChanges();
+                }
+
+                return true;
+            }
+            catch
+            {
+                return false;
             }
             finally
             {

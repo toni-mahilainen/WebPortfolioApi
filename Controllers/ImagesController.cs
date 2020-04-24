@@ -133,5 +133,34 @@ namespace WebPortfolioCoreApi.Controllers
                 context.Dispose();
             }
         }
+
+        // Delete all message
+        static public bool DeleteAllImages(int id)
+        {
+            WebPortfolioContext context = new WebPortfolioContext();
+
+            try
+            {
+                // Searching right message with ID
+                var image = context.ImageUrls.Find(id);
+
+                // Deletion from the database is performed
+                if (image != null)
+                {
+                    context.Remove(image);
+                    context.SaveChanges();
+                }
+
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+            finally
+            {
+                context.Dispose();
+            }
+        }
     }
 }

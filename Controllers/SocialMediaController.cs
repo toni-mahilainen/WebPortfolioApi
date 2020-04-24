@@ -149,5 +149,34 @@ namespace WebPortfolioCoreApi.Controllers
                 context.Dispose();
             }
         }
+
+        // Delete all message
+        static public bool DeleteAllLinks(int id)
+        {
+            WebPortfolioContext context = new WebPortfolioContext();
+
+            try
+            {
+                // Searching right link with ID
+                var link = context.SocialMediaLinks.Find(id);
+
+                // Deletion from the database is performed
+                if (link != null)
+                {
+                    context.Remove(link);
+                    context.SaveChanges();
+                }
+
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+            finally
+            {
+                context.Dispose();
+            }
+        }
     }
 }
