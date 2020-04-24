@@ -24,7 +24,7 @@ namespace WebPortfolioCoreApi.Controllers
             {
                 var allLinks = (from sml in context.SocialMediaLinks
                                 where sml.PortfolioId == id
-                                select new 
+                                select new
                                 {
                                     sml.LinkId,
                                     sml.PortfolioId,
@@ -82,6 +82,37 @@ namespace WebPortfolioCoreApi.Controllers
             catch (Exception ex)
             {
                 return BadRequest("Problem detected while adding a new link. Error message: " + ex.Message);
+            }
+            finally
+            {
+                context.Dispose();
+            }
+        }
+
+        // PUT: api/socialmedia/{linkId}
+        // Update a single link for social media service
+        [HttpPut]
+        [Route("{id}")]
+        public ActionResult UpdateLink(int id, [FromBody] SocialMediaLinks newLink)
+        {
+            WebPortfolioContext context = new WebPortfolioContext();
+
+            try
+            {
+                // Get a link that need to update. New data is placed to database
+                SocialMediaLinks oldLink = (from sml in context.SocialMediaLinks
+                                            where sml.LinkId == id
+                                            select sml).FirstOrDefault();
+
+                oldLink.ServiceId = newLink.ServiceId;
+                oldLink.Link = newLink.Link;
+                context.SaveChanges();
+
+                return Ok("Link has updated succesfully!");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest("Problem detected while updating a link. Link ID: " + id + ". Error message: " + ex.Message);
             }
             finally
             {
