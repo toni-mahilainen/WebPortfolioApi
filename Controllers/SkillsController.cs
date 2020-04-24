@@ -143,7 +143,7 @@ namespace WebPortfolioCoreApi.Controllers
         // Delete a skill
         [HttpDelete]
         [Route("{id}")]
-        public ActionResult DeleteSkill(int id)
+        public ActionResult DeleteSkillAndProjects(int id)
         {
             WebPortfolioContext context = new WebPortfolioContext();
 

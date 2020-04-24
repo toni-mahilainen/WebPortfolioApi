@@ -103,5 +103,36 @@ namespace WebPortfolioCoreApi.Controllers
                 context.Dispose();
             }
         }
+
+        // DELETE: api/projects/{projectId}
+        // Delete a project
+        [HttpDelete]
+        [Route("{id}")]
+        public ActionResult DeleteProject(int id)
+        {
+            WebPortfolioContext context = new WebPortfolioContext();
+
+            try
+            {
+                // Removes the skill
+                var project = context.Projects.Find(id);
+
+                if (project != null)
+                {
+                    context.Remove(project);
+                    context.SaveChanges();
+                }
+
+                return Ok("Project deleted succesfully!");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest("Problem detected while deleting the project. Error message: " + ex.Message);
+            }
+            finally
+            {
+                context.Dispose();
+            }
+        }
     }
 }
