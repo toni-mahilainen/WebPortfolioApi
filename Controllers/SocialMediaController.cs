@@ -119,5 +119,35 @@ namespace WebPortfolioCoreApi.Controllers
                 context.Dispose();
             }
         }
+
+        // DELETE: api/socialmedia/{linkId}
+        // Delete a link
+        [HttpDelete]
+        [Route("{id}")]
+        public ActionResult DeleteLink(int id)
+        {
+            WebPortfolioContext context = new WebPortfolioContext();
+
+            try
+            {
+                var link = context.SocialMediaLinks.Find(id);
+
+                if (link != null)
+                {
+                    context.Remove(link);
+                    context.SaveChanges();
+                }
+
+                return Ok("Link deleted succesfully!");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest("Problem detected while deleting the link. Error message: " + ex.Message);
+            }
+            finally
+            {
+                context.Dispose();
+            }
+        }
     }
 }
