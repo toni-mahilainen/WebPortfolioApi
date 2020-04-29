@@ -12,7 +12,7 @@ namespace WebPortfolioCoreApi.Controllers
     [ApiController]
     public class SocialMediaController : ControllerBase
     {
-        // GET: api/socialmedia/{portfolioId}
+        // GET: api/socialmedia/{userId}
         // Get all social media links for users portfolio
         [HttpGet]
         [Route("{id}")]
@@ -23,11 +23,11 @@ namespace WebPortfolioCoreApi.Controllers
             try
             {
                 var allLinks = (from sml in context.SocialMediaLinks
-                                where sml.PortfolioId == id
+                                where sml.UserId == id
                                 select new
                                 {
                                     sml.LinkId,
-                                    sml.PortfolioId,
+                                    sml.UserId,
                                     sml.ServiceId,
                                     sml.Link
                                 }).ToList();
@@ -44,7 +44,7 @@ namespace WebPortfolioCoreApi.Controllers
             }
         }
 
-        // POST: api/socialmedia/{portfolioId}
+        // POST: api/socialmedia/{userId}
         // Add new social media link for specific portfolio
         [HttpPost]
         [Route("{id}")]
@@ -64,7 +64,7 @@ namespace WebPortfolioCoreApi.Controllers
                     // Placed new link info to an object and adding it to database
                     SocialMediaLinks link = new SocialMediaLinks
                     {
-                        PortfolioId = id,
+                        UserId = id,
                         ServiceId = newLink.ServiceId,
                         Link = newLink.Link
                     };

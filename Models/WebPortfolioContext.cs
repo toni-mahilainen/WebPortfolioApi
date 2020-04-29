@@ -198,21 +198,21 @@ namespace WebPortfolioCoreApi.Models
 
                 entity.Property(e => e.Link).HasMaxLength(200);
 
-                entity.Property(e => e.PortfolioId).HasColumnName("PortfolioID");
-
                 entity.Property(e => e.ServiceId).HasColumnName("ServiceID");
 
-                entity.HasOne(d => d.Portfolio)
-                    .WithMany(p => p.SocialMediaLinks)
-                    .HasForeignKey(d => d.PortfolioId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_SocialMediaLinks_PortfolioContent");
+                entity.Property(e => e.UserId).HasColumnName("UserID");
 
                 entity.HasOne(d => d.Service)
                     .WithMany(p => p.SocialMediaLinks)
                     .HasForeignKey(d => d.ServiceId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_SocialMediaLinks_SocialMediaServices");
+
+                entity.HasOne(d => d.User)
+                    .WithMany(p => p.SocialMediaLinks)
+                    .HasForeignKey(d => d.UserId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_SocialMediaLinks_Users");
             });
 
             modelBuilder.Entity<SocialMediaServices>(entity =>

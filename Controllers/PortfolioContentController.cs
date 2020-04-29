@@ -310,7 +310,7 @@ namespace WebPortfolioCoreApi.Controllers
 
                     // Searching social media links with portfolio ID
                     var linkIdArray = (from sml in context.SocialMediaLinks
-                                        where sml.PortfolioId == portfolioId
+                                        where sml.UserId == portfolioId
                                         select sml.LinkId).ToArray();
 
                     int linkArrayCount = linkIdArray.Count();

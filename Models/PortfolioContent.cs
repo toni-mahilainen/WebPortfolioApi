@@ -9,7 +9,6 @@ namespace WebPortfolioCoreApi.Models
         {
             Emails = new HashSet<Emails>();
             QuestbookMessages = new HashSet<QuestbookMessages>();
-            SocialMediaLinks = new HashSet<SocialMediaLinks>();
         }
 
         public int PortfolioId { get; set; }
@@ -29,6 +28,5 @@ namespace WebPortfolioCoreApi.Models
         public virtual Users User { get; set; }
         public virtual ICollection<Emails> Emails { get; set; }
         public virtual ICollection<QuestbookMessages> QuestbookMessages { get; set; }
-        public virtual ICollection<SocialMediaLinks> SocialMediaLinks { get; set; }
     }
 }
