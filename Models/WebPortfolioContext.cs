@@ -238,6 +238,8 @@ namespace WebPortfolioCoreApi.Models
                     .IsUnicode(false)
                     .IsFixedLength();
 
+                entity.Property(e => e.Token).HasMaxLength(500);
+
                 entity.Property(e => e.Username)
                     .IsRequired()
                     .HasMaxLength(50);

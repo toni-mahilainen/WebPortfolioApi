@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using WebPortfolioCoreApi.Models;
 
 namespace WebPortfolioCoreApi.Controllers
@@ -45,39 +48,50 @@ namespace WebPortfolioCoreApi.Controllers
         }
 
         // POST: api/socialmedia/{userId}
-        // Add new social media link for specific portfolio
+        // Add new social media service links for specific portfolio
         [HttpPost]
         [Route("{id}")]
-        public ActionResult AddLink(int id, [FromBody] SocialMediaLinks newLink)
+        public ActionResult AddLinks(int id, [FromBody] JsonElement jsonElement)
         {
             WebPortfolioContext context = new WebPortfolioContext();
 
+            // Converts json element to string
+            string json = System.Text.Json.JsonSerializer.Serialize(jsonElement);
+
+            // Converts json string to JSON object
+            var obj = JsonConvert.DeserializeObject<JObject>(json);
+
             try
             {
-                // Check if user already have a link for service. If not an addition is made to the database
-                SocialMediaLinks linkCheck = (from sml in context.SocialMediaLinks
-                                              where sml.ServiceId == newLink.ServiceId
-                                              select sml).FirstOrDefault();
-
-                if (linkCheck == null)
+                int servicesArrayCount = obj["Services"].Count();
+                for (int i = 0; i < servicesArrayCount; i++)
                 {
-                    // Placed new link info to an object and adding it to database
-                    SocialMediaLinks link = new SocialMediaLinks
+                    int serviceId = int.Parse(obj["Services"][i]["ServiceId"].ToString());
+
+                    // Check if user already have a link for service. If not an addition is made to the database
+                    var linkCheck = (from sml in context.SocialMediaLinks
+                                     where sml.ServiceId == serviceId
+                                     select new
+                                     {
+                                         sml.Service
+                                     }).ToList();
+
+                    if (linkCheck.Count() == 0)
                     {
-                        UserId = id,
-                        ServiceId = newLink.ServiceId,
-                        Link = newLink.Link
-                    };
+                        // Placed new link info to an object and adding it to database
+                        SocialMediaLinks link = new SocialMediaLinks
+                        {
+                            UserId = id,
+                            ServiceId = serviceId,
+                            Link = obj["Services"][i]["Link"].ToString()
+                        };
 
-                    context.SocialMediaLinks.Add(link);
-                    context.SaveChanges();
-                }
-                else
-                {
-                    return NotFound("Portfolio already includes a link for service.");
+                        context.SocialMediaLinks.Add(link);
+                        context.SaveChanges();
+                    }
                 }
 
-                return Ok("New link has added to portfolio!");
+                return Ok("New links has added to portfolio!");
             }
             catch (Exception ex)
             {

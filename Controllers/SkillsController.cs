@@ -47,10 +47,10 @@ namespace WebPortfolioCoreApi.Controllers
         }
 
         // POST: api/skills/{userId}
-        // Add users skills to database
+        // Add users skill/projects to database
         [HttpPost]
         [Route("{id}")]
-        public ActionResult AddSkill(int id, [FromBody] JsonElement jsonElement)
+        public ActionResult AddSkillAndProjects(int id, [FromBody] JsonElement jsonElement)
         {
             WebPortfolioContext context = new WebPortfolioContext();
 

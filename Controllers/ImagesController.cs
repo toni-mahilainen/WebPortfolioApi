@@ -49,24 +49,43 @@ namespace WebPortfolioCoreApi.Controllers
         // Add users images to database
         [HttpPost]
         [Route("{id}")]
-        public ActionResult AddImages(int id, [FromBody] ImageUrls newImageInfo)
+        public ActionResult AddImages(int id, [FromBody] JsonElement jsonElement)
         {
             WebPortfolioContext context = new WebPortfolioContext();
 
+            // Converts json element to string
+            string json = System.Text.Json.JsonSerializer.Serialize(jsonElement);
+
+            // Converts json string to dataset
+            DataSet dataSet = JsonConvert.DeserializeObject<DataSet>(json);
+
             try
             {
-                // Adds image urls to database
-                ImageUrls newImage = new ImageUrls
+                if (dataSet != null)
                 {
-                    UserId = id,
-                    TypeId = newImageInfo.TypeId,
-                    Url = newImageInfo.Url
-                };
+                    // Get through every table from dataset
+                    // Tables includes type ID and new URL for image
+                    foreach (DataTable dataTable in dataSet.Tables)
+                    {
+                        DataRow row = dataTable.Rows[0];
 
-                context.ImageUrls.Add(newImage);
-                context.SaveChanges();
+                        int typeId = int.Parse(row["TypeID"].ToString());
+                        string url = row["Url"].ToString();
 
-                return Ok("New image has saved!");
+                        // Adds image urls to database
+                        ImageUrls newImage = new ImageUrls
+                        {
+                            UserId = id,
+                            TypeId = typeId,
+                            Url = url
+                        };
+
+                        context.ImageUrls.Add(newImage);
+                        context.SaveChanges();
+                    }
+                }
+
+                return Ok("Images has added succesfully!");
             }
             catch (Exception ex)
             {
