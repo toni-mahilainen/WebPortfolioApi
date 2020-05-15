@@ -23,18 +23,14 @@ namespace WebPortfolioCoreApi.Controllers
 
             try
             {
-                // Searching right portfolio with user ID
-                var portfolioId = (from p in context.PortfolioContent
-                                 where p.UserId == id
-                                 select p.PortfolioId).FirstOrDefault();
-
                 // Searching all visitors/messages with portfolio ID
                 var questbookContent = (from q in context.QuestbookMessages
-                                        where q.PortfolioId == portfolioId
+                                        where q.UserId == id
                                         join v in context.Visitors
                                         on q.VisitorId equals v.VisitorId
                                         select new 
                                         { 
+                                            q.MessageId,
                                             v.Firstname,
                                             v.Lastname,
                                             v.Company,
@@ -54,7 +50,7 @@ namespace WebPortfolioCoreApi.Controllers
             }
         }
 
-        // POST: api/questbook/{portfolioId}
+        // POST: api/questbook/{userId}
         // Add new message
         [HttpPost]
         [Route("{id}")]
@@ -82,7 +78,7 @@ namespace WebPortfolioCoreApi.Controllers
 
                 QuestbookMessages messageAndOthers = new QuestbookMessages
                 {
-                    PortfolioId = id,
+                    UserId = id,
                     VisitorId = visitorId,
                     Message = newMessage.Message,
                     VisitationTimestamp = newMessage.VisitationTimestamp

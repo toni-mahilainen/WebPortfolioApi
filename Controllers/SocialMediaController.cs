@@ -29,8 +29,6 @@ namespace WebPortfolioCoreApi.Controllers
                                 where sml.UserId == id
                                 select new
                                 {
-                                    sml.LinkId,
-                                    sml.UserId,
                                     sml.ServiceId,
                                     sml.Link
                                 }).ToList();

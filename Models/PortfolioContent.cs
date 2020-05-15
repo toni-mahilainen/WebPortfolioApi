@@ -5,12 +5,6 @@ namespace WebPortfolioCoreApi.Models
 {
     public partial class PortfolioContent
     {
-        public PortfolioContent()
-        {
-            Emails = new HashSet<Emails>();
-            QuestbookMessages = new HashSet<QuestbookMessages>();
-        }
-
         public int PortfolioId { get; set; }
         public int UserId { get; set; }
         public string Firstname { get; set; }
@@ -26,7 +20,5 @@ namespace WebPortfolioCoreApi.Models
         public string LanguageSkills { get; set; }
 
         public virtual Users User { get; set; }
-        public virtual ICollection<Emails> Emails { get; set; }
-        public virtual ICollection<QuestbookMessages> QuestbookMessages { get; set; }
     }
 }

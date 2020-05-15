@@ -56,7 +56,7 @@ namespace WebPortfolioCoreApi.Controllers
             }
         }
 
-        // GET: api/portfoliocontent/emails/{portfolioId}
+        // GET: api/portfoliocontent/emails/{userId}
         // Get all users email addresses
         [HttpGet]
         [Route("emails/{id}")]
@@ -67,7 +67,7 @@ namespace WebPortfolioCoreApi.Controllers
             try
             {
                 var emails = (from e in context.Emails
-                              where e.PortfolioId == id
+                              where e.UserId == id
                               select e.EmailAddress).ToList();
 
                 return Ok(emails);
@@ -113,11 +113,6 @@ namespace WebPortfolioCoreApi.Controllers
                 context.SaveChanges();
 
                 // Adding emails to database
-                // Searching for right portfolio ID
-                int portfolioId = (from pc in context.PortfolioContent
-                                   where pc.UserId == id
-                                   select pc.PortfolioId).FirstOrDefault();
-
                 // Make an array for new email addresses and add them to database
                 var emailsArray = newContent.Emails;
 
@@ -125,7 +120,7 @@ namespace WebPortfolioCoreApi.Controllers
                 {
                     Emails emails = new Emails
                     {
-                        PortfolioId = portfolioId,
+                        UserId = id,
                         EmailAddress = emailsArray[i]
                     };
                     context.Emails.Add(emails);
@@ -234,21 +229,16 @@ namespace WebPortfolioCoreApi.Controllers
 
             try
             {
-                // Searching right portfolio with user ID
-                int portfolioId = (from pc in context.PortfolioContent
-                                   where pc.UserId == id
-                                   select pc.PortfolioId).FirstOrDefault();
-
-                if (portfolioId != 0)
+                if (id != 0)
                 {
                     bool messageBool;
                     bool imageBool;
                     bool linkBool;
                     bool skillBool;
 
-                    // Searching right emails with portfolio ID
+                    // Searching right emails with user ID
                     var emailIdArray = (from e in context.Emails
-                                        where e.PortfolioId == portfolioId
+                                        where e.UserId == id
                                         select e.EmailId).ToArray();
 
                     int emailArrayCount = emailIdArray.Count();
@@ -264,9 +254,9 @@ namespace WebPortfolioCoreApi.Controllers
                         }
                     }
 
-                    // Searching right questbook messages with portfolio ID
+                    // Searching right questbook messages with user ID
                     var messageIdArray = (from qm in context.QuestbookMessages
-                                          where qm.PortfolioId == portfolioId
+                                          where qm.UserId == id
                                           select qm.MessageId).ToArray();
 
                     int messageArrayCount = messageIdArray.Count();
@@ -308,9 +298,9 @@ namespace WebPortfolioCoreApi.Controllers
                         }
                     }
 
-                    // Searching social media links with portfolio ID
+                    // Searching social media links with user ID
                     var linkIdArray = (from sml in context.SocialMediaLinks
-                                        where sml.UserId == portfolioId
+                                        where sml.UserId == id
                                         select sml.LinkId).ToArray();
 
                     int linkArrayCount = linkIdArray.Count();
@@ -351,6 +341,11 @@ namespace WebPortfolioCoreApi.Controllers
                             }
                         }
                     }
+
+                    // Searching right portfolio with user ID
+                    int portfolioId = (from pc in context.PortfolioContent
+                                       where pc.UserId == id
+                                       select pc.PortfolioId).FirstOrDefault();
 
                     // At the end, search the right portfolio and remove it
                     if ((messageBool = true) && (imageBool = true) && (linkBool = true) && (skillBool = true))

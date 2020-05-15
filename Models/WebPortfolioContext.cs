@@ -47,13 +47,13 @@ namespace WebPortfolioCoreApi.Models
                     .IsRequired()
                     .HasMaxLength(150);
 
-                entity.Property(e => e.PortfolioId).HasColumnName("PortfolioID");
+                entity.Property(e => e.UserId).HasColumnName("UserID");
 
-                entity.HasOne(d => d.Portfolio)
+                entity.HasOne(d => d.User)
                     .WithMany(p => p.Emails)
-                    .HasForeignKey(d => d.PortfolioId)
+                    .HasForeignKey(d => d.UserId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_Emails_PortfolioContent");
+                    .HasConstraintName("FK_Emails_Users");
             });
 
             modelBuilder.Entity<ImageTypes>(entity =>
@@ -152,17 +152,17 @@ namespace WebPortfolioCoreApi.Models
 
                 entity.Property(e => e.MessageId).HasColumnName("MessageID");
 
-                entity.Property(e => e.PortfolioId).HasColumnName("PortfolioID");
+                entity.Property(e => e.UserId).HasColumnName("UserID");
 
                 entity.Property(e => e.VisitationTimestamp).HasColumnType("datetime");
 
                 entity.Property(e => e.VisitorId).HasColumnName("VisitorID");
 
-                entity.HasOne(d => d.Portfolio)
+                entity.HasOne(d => d.User)
                     .WithMany(p => p.QuestbookMessages)
-                    .HasForeignKey(d => d.PortfolioId)
+                    .HasForeignKey(d => d.UserId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_QuestbookMessages_PortfolioContent");
+                    .HasConstraintName("FK_QuestbookMessages_Users");
 
                 entity.HasOne(d => d.Visitor)
                     .WithMany(p => p.QuestbookMessages)
@@ -238,7 +238,10 @@ namespace WebPortfolioCoreApi.Models
                     .IsUnicode(false)
                     .IsFixedLength();
 
-                entity.Property(e => e.Token).HasMaxLength(500);
+                entity.Property(e => e.Token)
+                    .HasMaxLength(199)
+                    .IsUnicode(false)
+                    .IsFixedLength();
 
                 entity.Property(e => e.Username)
                     .IsRequired()

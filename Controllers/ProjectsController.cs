@@ -24,7 +24,11 @@ namespace WebPortfolioCoreApi.Controllers
             {
                 var projects = (from p in context.Projects
                                 where p.SkillId == id
-                                select p).ToList();
+                                select new { 
+                                    p.Name,
+                                    p.Link,
+                                    p.Description
+                                }).ToList();
 
                 return Ok(projects);
             }
