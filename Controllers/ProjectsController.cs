@@ -77,10 +77,7 @@ namespace WebPortfolioCoreApi.Controllers
             }
         }
 
-        // PUT: api/projects/{projectId}
         // Update users single project for specific skill
-        [HttpPut]
-        [Route("{id}")]
         static public bool UpdateProject(int id, Projects newProject)
         {
             WebPortfolioContext context = new WebPortfolioContext();

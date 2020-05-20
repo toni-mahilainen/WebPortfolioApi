@@ -47,7 +47,7 @@ namespace WebPortfolioCoreApi.Controllers
         }
 
         // POST: api/skills/{userId}
-        // Add users skill/projects to database
+        // Add/updates users skills/projects to database
         [HttpPost]
         [Route("{id}")]
         public ActionResult AddOrUpdateSkillsAndProjects(int id, [FromBody] JsonElement jsonElement)
@@ -62,7 +62,7 @@ namespace WebPortfolioCoreApi.Controllers
 
             try
             {
-                // Converts nested "Skills" JSON object to an array and save count of an array to variable
+                // Converts nested "Skills"-JSON object to an array and save count of an array to variable
                 var skillsArray = obj["Skills"].ToArray();
                 int skillArrayCount = skillsArray.Count();
 
@@ -71,6 +71,7 @@ namespace WebPortfolioCoreApi.Controllers
                 {
                     int lastAddedSkillId = 0;
                     int skillId = int.Parse(skillsArray[i]["SkillId"].ToString());
+                    // If skill is new (skillId == 0), a create is made to database. Otherwise an update
                     if (skillId == 0)
                     {
                         // Adds new skill to database
@@ -92,6 +93,7 @@ namespace WebPortfolioCoreApi.Controllers
                     }
                     else
                     {
+                        // Updates the skill
                         Skills skill = new Skills
                         {
                             Skill = skillsArray[i]["Skill"].ToString(),
@@ -112,18 +114,18 @@ namespace WebPortfolioCoreApi.Controllers
                     for (int a = 0; a < projectArrayCount; a++)
                     {
                         int projectId = int.Parse(projectsArray[a]["ProjectId"].ToString());
+                        // If projects is new (projectId == 0), a create is made to database. Otherwise an update
                         if (projectId == 0)
                         {
                             Projects project = new Projects();
 
+                            // if the skill that was added was already exists, skill ID comes from variable "skillId"
                             if (lastAddedSkillId == 0)
                             {
-
                                 project.SkillId = skillId;
                                 project.Name = projectsArray[a]["Name"].ToString();
                                 project.Link = projectsArray[a]["Link"].ToString();
                                 project.Description = projectsArray[a]["Description"].ToString();
-
                             }
                             else
                             {
@@ -138,6 +140,7 @@ namespace WebPortfolioCoreApi.Controllers
                         }
                         else
                         {
+                            // Updates the project
                             Projects project = new Projects
                             {
                                 Name = projectsArray[a]["Name"].ToString(),
@@ -165,10 +168,7 @@ namespace WebPortfolioCoreApi.Controllers
             }
         }
 
-        // PUT: api/skills/{skillId}
         // Update users skills
-        [HttpPut]
-        [Route("{id}")]
         static public bool UpdateSkill(int id, Skills newSkill)
         {
             WebPortfolioContext context = new WebPortfolioContext();

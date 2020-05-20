@@ -68,7 +68,11 @@ namespace WebPortfolioCoreApi.Controllers
             {
                 var emails = (from e in context.Emails
                               where e.UserId == id
-                              select e.EmailAddress).ToList();
+                              select new
+                              {
+                                  e.EmailId,
+                                  e.EmailAddress
+                              }).ToList();
 
                 return Ok(emails);
             }
@@ -86,7 +90,7 @@ namespace WebPortfolioCoreApi.Controllers
         // Add new portfolio content
         [HttpPost]
         [Route("content/{id}")]
-        public ActionResult AddContent(int id, [FromBody] AllContent newContent)
+        public ActionResult AddContent(int id, [FromBody] PortfolioContent newContent)
         {
             WebPortfolioContext context = new WebPortfolioContext();
 
@@ -112,26 +116,52 @@ namespace WebPortfolioCoreApi.Controllers
                 context.PortfolioContent.Add(newPortfolio);
                 context.SaveChanges();
 
+                return Ok("New content has saved!");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest("Problem detected while adding portfolio content for user " + newContent.Firstname + " " + newContent.Lastname + ". Error message: " + ex.Message);
+            }
+            finally
+            {
+                context.Dispose();
+            }
+        }
+
+        // POST: api/portfoliocontent/emails/{userId}
+        // Add new portfolio content
+        [HttpPost]
+        [Route("emails/{id}")]
+        public ActionResult AddEmails(int id, [FromBody] JsonElement jsonElement)
+        {
+            WebPortfolioContext context = new WebPortfolioContext();
+            
+            try
+            {
                 // Adding emails to database
-                // Make an array for new email addresses and add them to database
-                var emailsArray = newContent.Emails;
+                // Converts emails json element to string
+                string json = System.Text.Json.JsonSerializer.Serialize(jsonElement);
+                // Converts json string to JSON object
+                var obj = JsonConvert.DeserializeObject<JObject>(json);
+                // Converts object to an array
+                var emailsArray = obj["Emails"].ToArray();
 
                 for (int i = 0; i < emailsArray.Length; i++)
                 {
                     Emails emails = new Emails
                     {
                         UserId = id,
-                        EmailAddress = emailsArray[i]
+                        EmailAddress = emailsArray[i]["EmailAddress"].ToString()
                     };
                     context.Emails.Add(emails);
                     context.SaveChanges();
                 }
 
-                return Ok("New content has saved!");
+                return Ok("Emails has saved!");
             }
             catch (Exception ex)
             {
-                return BadRequest("Problem detected while adding portfolio content for user " + newContent.Firstname + " " + newContent.Lastname + ". Error message: " + ex.Message);
+                return BadRequest("Problem detected while adding portfolio content for user " + id + ". Error message: " + ex.Message);
             }
             finally
             {
@@ -177,7 +207,7 @@ namespace WebPortfolioCoreApi.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest("Problem detected while updating portfolio content. Error message: " + ex.Message);
+                return BadRequest("Problem detected while updating portfolio content. Error message: " + ex.InnerException.Message);
             }
             finally
             {
@@ -185,32 +215,37 @@ namespace WebPortfolioCoreApi.Controllers
             }
         }
 
-        // PUT: api/portfoliocontent/
+        // PUT: api/portfoliocontent/emails
         // Update users email address
         [HttpPut]
-        [Route("")]
-        public ActionResult UpdateEmail([FromBody] Email email)
+        [Route("emails")]
+        public ActionResult UpdateEmails([FromBody] JsonElement jsonElement)
         {
             WebPortfolioContext context = new WebPortfolioContext();
 
+            // Updates emails to database
+            // Converts emails json element to string
+            string json = System.Text.Json.JsonSerializer.Serialize(jsonElement);
+            // Converts json string to JSON object
+            var obj = JsonConvert.DeserializeObject<JObject>(json);
+            // Converts object to an array
+            var emailsArray = obj["Emails"].ToArray();
+
             try
             {
-                if (email != null)
+                for (int i = 0; i < emailsArray.Length; i++)
                 {
-                    // updating emails to database
+                    int emailId = int.Parse(emailsArray[i]["EmailId"].ToString());
+
                     Emails oldEmail = (from e in context.Emails
-                                       where e.EmailId == email.EmailId
+                                       where e.EmailId == emailId
                                        select e).FirstOrDefault();
 
-                    oldEmail.EmailAddress = email.NewEmailAddress;
+                    oldEmail.EmailAddress = emailsArray[i]["EmailAddress"].ToString();
                     context.SaveChanges();
+                }
 
-                    return Ok("Email address updated succesfully!");
-                }
-                else
-                {
-                    return NotFound("Not found any email with email ID: " + email.EmailId);
-                }
+                return Ok("Emails updated succesfully!");
             }
             catch (Exception ex)
             {
@@ -300,8 +335,8 @@ namespace WebPortfolioCoreApi.Controllers
 
                     // Searching social media links with user ID
                     var linkIdArray = (from sml in context.SocialMediaLinks
-                                        where sml.UserId == id
-                                        select sml.LinkId).ToArray();
+                                       where sml.UserId == id
+                                       select sml.LinkId).ToArray();
 
                     int linkArrayCount = linkIdArray.Count();
 
@@ -322,8 +357,8 @@ namespace WebPortfolioCoreApi.Controllers
 
                     // Searching social media links with portfolio ID
                     var skillIdArray = (from s in context.Skills
-                                       where s.UserId == id
-                                       select s.SkillId).ToArray();
+                                        where s.UserId == id
+                                        select s.SkillId).ToArray();
 
                     int skillArrayCount = skillIdArray.Count();
 
