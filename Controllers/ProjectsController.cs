@@ -25,6 +25,7 @@ namespace WebPortfolioCoreApi.Controllers
                 var projects = (from p in context.Projects
                                 where p.SkillId == id
                                 select new { 
+                                    p.ProjectId,
                                     p.Name,
                                     p.Link,
                                     p.Description
@@ -80,7 +81,7 @@ namespace WebPortfolioCoreApi.Controllers
         // Update users single project for specific skill
         [HttpPut]
         [Route("{id}")]
-        public ActionResult UpdateProject(int id, [FromBody] Projects newProject)
+        static public bool UpdateProject(int id, Projects newProject)
         {
             WebPortfolioContext context = new WebPortfolioContext();
 
@@ -96,11 +97,11 @@ namespace WebPortfolioCoreApi.Controllers
                 oldProject.Description = newProject.Description;
                 context.SaveChanges();
 
-                return Ok("Project has updated succesfully!");
+                return true;
             }
-            catch (Exception ex)
+            catch
             {
-                return BadRequest("Problem detected while updating a project. Project ID: " + id + ". Error message: " + ex.Message);
+                return false;
             }
             finally
             {

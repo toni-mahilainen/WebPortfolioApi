@@ -68,7 +68,7 @@ namespace WebPortfolioCoreApi.Controllers
 
                     // Check if user already have a link for service. If not an addition is made to the database
                     var linkCheck = (from sml in context.SocialMediaLinks
-                                     where sml.ServiceId == serviceId
+                                     where sml.UserId == id && sml.ServiceId == serviceId
                                      select new
                                      {
                                          sml.Service
