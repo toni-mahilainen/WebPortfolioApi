@@ -196,7 +196,7 @@ namespace WebPortfolioCoreApi.Controllers
         }
 
         // DELETE: api/skills/{skillId}
-        // Delete a skill
+        // Delete the skill
         [HttpDelete]
         [Route("{id}")]
         public ActionResult DeleteSkill(int id)

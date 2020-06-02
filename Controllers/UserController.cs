@@ -17,8 +17,57 @@ namespace WebPortfolioCoreApi.Controllers
     [ApiController]
     public class UserController : ControllerBase
     {
+        // GET: api/user/auth
+        // Check if the user is authenticated
+        [HttpGet]
+        [Route("auth")]
+        public ActionResult CheckAuth([FromHeader(Name = "Authorization")] string header)
+        {
+            WebPortfolioContext context = new WebPortfolioContext();
+
+            // Diffs a token from header
+            string[] headerParts = header.Split(new string[] { " " }, StringSplitOptions.RemoveEmptyEntries);
+            string token = headerParts[1];
+
+            try
+            {
+                if (token != "null")
+                {
+                    // Decoding the token to set the user ID to variable
+                    var handler = new JwtSecurityTokenHandler();
+                    var jsonToken = handler.ReadJwtToken(token);
+
+                    var id = int.Parse(jsonToken.Claims.First(claim => claim.Type == "nameid").Value);
+
+                    // If user have the same token in database, authentication is succeesed
+                    Users login = context.Users.Find(id);
+
+                    if (token == login.Token)
+                    {
+                        return Ok("You are authenticated!");
+                    }
+                    else
+                    {
+                        return NotFound("UnauthorizedError");
+                    }
+                }
+                else
+                {
+                    return BadRequest("Problem");
+                }
+            }
+            catch (Exception)
+            {
+                return BadRequest("Problem");
+            }
+            finally
+            {
+                context.Dispose();
+            }
+        }
+
         // POST: api/user/create
-        // Add new user
+        // Create a new user
         [HttpPost]
         [Route("create")]
         public ActionResult AddNewUser([FromBody] Users newUser)
@@ -57,42 +106,6 @@ namespace WebPortfolioCoreApi.Controllers
             }
         }
 
-        // PUT: api/user/{userId}
-        // Change user password
-        [HttpPut]
-        [Route("{id}")]
-        public ActionResult ChangePassword(int id, [FromBody] Passwords passwords)
-        {
-            WebPortfolioContext context = new WebPortfolioContext();
-
-            // Searching right user with ID
-            var user = context.Users.Find(id);
-
-            // If old password is correct, password will be changed
-            if (CheckPassword(user, passwords.OldPassword))
-            {
-                try
-                {
-                    user.Password = passwords.NewPassword;
-                    context.SaveChanges();
-
-                    return Ok("Password updated succesfully!");
-                }
-                catch (Exception ex)
-                {
-                    return BadRequest("Problem detected while deleting user. Error message: " + ex.Message);
-                }
-                finally
-                {
-                    context.Dispose();
-                }
-            }
-            else
-            {
-                return NotFound("Wrong old password.");
-            }
-        }
-
         // Creates a 20 chars long key for token
         private static Random random = new Random();
         public static string RandomString(int length)
@@ -102,7 +115,7 @@ namespace WebPortfolioCoreApi.Controllers
         }
 
         // POST: api/user/check
-        // Check login
+        // Create a new JWT Token for user and send it to database
         [HttpPost]
         [Route("check")]
         public ActionResult CheckLogin([FromBody] Users login)
@@ -164,52 +177,39 @@ namespace WebPortfolioCoreApi.Controllers
             }
         }
 
-        // GET: api/user/auth
-        // Check auth
-        [HttpGet]
-        [Route("auth")]
-        public ActionResult CheckAuth([FromHeader(Name = "Authorization")] string header)
+        // PUT: api/user/{userId}
+        // Change users password
+        [HttpPut]
+        [Route("{id}")]
+        public ActionResult ChangePassword(int id, [FromBody] Passwords passwords)
         {
             WebPortfolioContext context = new WebPortfolioContext();
 
-            // Diffs a token from header
-            string[] headerParts = header.Split(new string[] { " " }, StringSplitOptions.RemoveEmptyEntries);
-            string token = headerParts[1];
+            // Searching right user with ID
+            var user = context.Users.Find(id);
 
-            try
+            // If old password is correct, password will be changed
+            if (CheckPassword(user, passwords.OldPassword))
             {
-                if (token != "null")
+                try
                 {
-                    // Decoding the token to set the user ID to variable
-                    var handler = new JwtSecurityTokenHandler();
-                    var jsonToken = handler.ReadJwtToken(token);
+                    user.Password = passwords.NewPassword;
+                    context.SaveChanges();
 
-                    var id = int.Parse(jsonToken.Claims.First(claim => claim.Type == "nameid").Value);
-
-                    // If user have the same token in database, authentication is succeesed
-                    Users login = context.Users.Find(id);
-
-                    if (token == login.Token)
-                    {
-                        return Ok("You are authenticated!");
-                    }
-                    else
-                    {
-                        return NotFound("UnauthorizedError");
-                    }
+                    return Ok("Password updated succesfully!");
                 }
-                else
+                catch (Exception ex)
                 {
-                    return BadRequest("Problem");
+                    return BadRequest("Problem detected while deleting user. Error message: " + ex.Message);
+                }
+                finally
+                {
+                    context.Dispose();
                 }
             }
-            catch (Exception)
+            else
             {
-                return BadRequest("Problem");
-            }
-            finally
-            {
-                context.Dispose();
+                return NotFound("Wrong old password.");
             }
         }
 
@@ -239,7 +239,7 @@ namespace WebPortfolioCoreApi.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest("Problem detected while deleting user. Error message: " + ex.Message);
+                return BadRequest("Problem detected while deleting user. Error message: " + ex.InnerException);
             }
             finally
             {

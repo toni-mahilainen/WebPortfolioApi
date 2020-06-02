@@ -18,7 +18,7 @@ namespace WebPortfolioCoreApi.Controllers
     public class PortfolioContentController : ControllerBase
     {
         // GET: api/portfoliocontent/content/{userId}
-        // Get all portfolio content
+        // Get all portfolio basic content
         [HttpGet]
         [Route("content/{id}")]
         public ActionResult GetContent(int id)
@@ -129,7 +129,7 @@ namespace WebPortfolioCoreApi.Controllers
         }
 
         // POST: api/portfoliocontent/emails/{userId}
-        // Add new portfolio content
+        // Add email addresses to user
         [HttpPost]
         [Route("emails/{id}")]
         public ActionResult AddEmails(int id, [FromBody] JsonElement jsonElement)
@@ -266,10 +266,11 @@ namespace WebPortfolioCoreApi.Controllers
             {
                 if (id != 0)
                 {
-                    bool messageBool;
-                    bool imageBool;
-                    bool linkBool;
-                    bool skillBool;
+                    bool mailBool = false;
+                    bool messageBool = false;
+                    bool imageBool = false;
+                    bool linkBool = false;
+                    bool skillBool = false;
 
                     // Searching right emails with user ID
                     var emailIdArray = (from e in context.Emails
@@ -287,6 +288,12 @@ namespace WebPortfolioCoreApi.Controllers
                             context.Remove(email);
                             context.SaveChanges();
                         }
+
+                        mailBool = true;
+                    }
+                    else
+                    {
+                        mailBool = true;
                     }
 
                     // Searching right questbook messages with user ID
@@ -310,13 +317,17 @@ namespace WebPortfolioCoreApi.Controllers
                             }
                         }
                     }
+                    else
+                    {
+                        messageBool = true;
+                    }
 
                     // Searching images with user ID
                     var imageIdArray = (from iu in context.ImageUrls
                                         where iu.UserId == id
                                         select iu.UrlId).ToArray();
 
-                    int urlArrayCount = messageIdArray.Count();
+                    int urlArrayCount = imageIdArray.Count();
 
                     if (urlArrayCount > 0)
                     {
@@ -331,6 +342,10 @@ namespace WebPortfolioCoreApi.Controllers
                                 i++;
                             }
                         }
+                    }
+                    else
+                    {
+                        imageBool = true;
                     }
 
                     // Searching social media links with user ID
@@ -354,6 +369,10 @@ namespace WebPortfolioCoreApi.Controllers
                             }
                         }
                     }
+                    else
+                    {
+                        linkBool = true;
+                    }
 
                     // Searching social media links with portfolio ID
                     var skillIdArray = (from s in context.Skills
@@ -376,6 +395,10 @@ namespace WebPortfolioCoreApi.Controllers
                             }
                         }
                     }
+                    else
+                    {
+                        skillBool = true;
+                    }
 
                     // Searching right portfolio with user ID
                     int portfolioId = (from pc in context.PortfolioContent
@@ -383,12 +406,16 @@ namespace WebPortfolioCoreApi.Controllers
                                        select pc.PortfolioId).FirstOrDefault();
 
                     // At the end, search the right portfolio and remove it
-                    if ((messageBool = true) && (imageBool = true) && (linkBool = true) && (skillBool = true))
+                    if ((mailBool = true) && (messageBool = true) && (imageBool = true) && (linkBool = true) && (skillBool = true))
                     {
                         PortfolioContent portfolio = context.PortfolioContent.Find(portfolioId);
 
                         context.Remove(portfolio);
                         context.SaveChanges();
+                    }
+                    else
+                    {
+                        return false;
                     }
                 }
 
