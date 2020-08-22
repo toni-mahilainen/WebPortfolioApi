@@ -12,6 +12,7 @@ namespace WebPortfolioCoreApi.Controllers
     [ApiController]
     public class DocumentationController : ControllerBase
     {
+        // Another comment because first commit
         // GET: api/documentation/
         // Get REST API documentation
         [HttpGet]
