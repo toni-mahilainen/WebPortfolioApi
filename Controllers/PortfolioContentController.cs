@@ -18,7 +18,7 @@ namespace WebPortfolioCoreApi.Controllers
     public class PortfolioContentController : ControllerBase
     {
         // GET: api/portfoliocontent/content/{userId}
-        // Get all portfolio content
+        // Get all portfolio basic content
         [HttpGet]
         [Route("content/{id}")]
         public ActionResult GetContent(int id)
@@ -56,7 +56,7 @@ namespace WebPortfolioCoreApi.Controllers
             }
         }
 
-        // GET: api/portfoliocontent/emails/{portfolioId}
+        // GET: api/portfoliocontent/emails/{userId}
         // Get all users email addresses
         [HttpGet]
         [Route("emails/{id}")]
@@ -67,8 +67,12 @@ namespace WebPortfolioCoreApi.Controllers
             try
             {
                 var emails = (from e in context.Emails
-                              where e.PortfolioId == id
-                              select e.EmailAddress).ToList();
+                              where e.UserId == id
+                              select new
+                              {
+                                  e.EmailId,
+                                  e.EmailAddress
+                              }).ToList();
 
                 return Ok(emails);
             }
@@ -86,7 +90,7 @@ namespace WebPortfolioCoreApi.Controllers
         // Add new portfolio content
         [HttpPost]
         [Route("content/{id}")]
-        public ActionResult AddContent(int id, [FromBody] AllContent newContent)
+        public ActionResult AddContent(int id, [FromBody] PortfolioContent newContent)
         {
             WebPortfolioContext context = new WebPortfolioContext();
 
@@ -112,31 +116,52 @@ namespace WebPortfolioCoreApi.Controllers
                 context.PortfolioContent.Add(newPortfolio);
                 context.SaveChanges();
 
-                // Adding emails to database
-                // Searching for right portfolio ID
-                int portfolioId = (from pc in context.PortfolioContent
-                                   where pc.UserId == id
-                                   select pc.PortfolioId).FirstOrDefault();
-
-                // Make an array for new email addresses and add them to database
-                var emailsArray = newContent.Emails;
-
-                for (int i = 0; i < emailsArray.Length; i++)
-                {
-                    Emails emails = new Emails
-                    {
-                        PortfolioId = portfolioId,
-                        EmailAddress = emailsArray[i]
-                    };
-                    context.Emails.Add(emails);
-                    context.SaveChanges();
-                }
-
                 return Ok("New content has saved!");
             }
             catch (Exception ex)
             {
                 return BadRequest("Problem detected while adding portfolio content for user " + newContent.Firstname + " " + newContent.Lastname + ". Error message: " + ex.Message);
+            }
+            finally
+            {
+                context.Dispose();
+            }
+        }
+
+        // POST: api/portfoliocontent/emails/{userId}
+        // Add email addresses to user
+        [HttpPost]
+        [Route("emails/{id}")]
+        public ActionResult AddEmails(int id, [FromBody] JsonElement jsonElement)
+        {
+            WebPortfolioContext context = new WebPortfolioContext();
+            
+            try
+            {
+                // Adding emails to database
+                // Converts emails json element to string
+                string json = System.Text.Json.JsonSerializer.Serialize(jsonElement);
+                // Converts json string to JSON object
+                var obj = JsonConvert.DeserializeObject<JObject>(json);
+                // Converts object to an array
+                var emailsArray = obj["Emails"].ToArray();
+
+                for (int i = 0; i < emailsArray.Length; i++)
+                {
+                    Emails emails = new Emails
+                    {
+                        UserId = id,
+                        EmailAddress = emailsArray[i]["EmailAddress"].ToString()
+                    };
+                    context.Emails.Add(emails);
+                    context.SaveChanges();
+                }
+
+                return Ok("Emails has saved!");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest("Problem detected while adding portfolio content for user " + id + ". Error message: " + ex.Message);
             }
             finally
             {
@@ -182,7 +207,7 @@ namespace WebPortfolioCoreApi.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest("Problem detected while updating portfolio content. Error message: " + ex.Message);
+                return BadRequest("Problem detected while updating portfolio content. Error message: " + ex.InnerException.Message);
             }
             finally
             {
@@ -190,32 +215,37 @@ namespace WebPortfolioCoreApi.Controllers
             }
         }
 
-        // PUT: api/portfoliocontent/
+        // PUT: api/portfoliocontent/emails
         // Update users email address
         [HttpPut]
-        [Route("")]
-        public ActionResult UpdateEmail([FromBody] Email email)
+        [Route("emails")]
+        public ActionResult UpdateEmails([FromBody] JsonElement jsonElement)
         {
             WebPortfolioContext context = new WebPortfolioContext();
 
+            // Updates emails to database
+            // Converts emails json element to string
+            string json = System.Text.Json.JsonSerializer.Serialize(jsonElement);
+            // Converts json string to JSON object
+            var obj = JsonConvert.DeserializeObject<JObject>(json);
+            // Converts object to an array
+            var emailsArray = obj["Emails"].ToArray();
+
             try
             {
-                if (email != null)
+                for (int i = 0; i < emailsArray.Length; i++)
                 {
-                    // updating emails to database
+                    int emailId = int.Parse(emailsArray[i]["EmailId"].ToString());
+
                     Emails oldEmail = (from e in context.Emails
-                                       where e.EmailId == email.EmailId
+                                       where e.EmailId == emailId
                                        select e).FirstOrDefault();
 
-                    oldEmail.EmailAddress = email.NewEmailAddress;
+                    oldEmail.EmailAddress = emailsArray[i]["EmailAddress"].ToString();
                     context.SaveChanges();
+                }
 
-                    return Ok("Email address updated succesfully!");
-                }
-                else
-                {
-                    return NotFound("Not found any email with email ID: " + email.EmailId);
-                }
+                return Ok("Emails updated succesfully!");
             }
             catch (Exception ex)
             {
@@ -234,21 +264,17 @@ namespace WebPortfolioCoreApi.Controllers
 
             try
             {
-                // Searching right portfolio with user ID
-                int portfolioId = (from pc in context.PortfolioContent
-                                   where pc.UserId == id
-                                   select pc.PortfolioId).FirstOrDefault();
-
-                if (portfolioId != 0)
+                if (id != 0)
                 {
-                    bool messageBool;
-                    bool imageBool;
-                    bool linkBool;
-                    bool skillBool;
+                    bool mailBool = false;
+                    bool messageBool = false;
+                    bool imageBool = false;
+                    bool linkBool = false;
+                    bool skillBool = false;
 
-                    // Searching right emails with portfolio ID
+                    // Searching right emails with user ID
                     var emailIdArray = (from e in context.Emails
-                                        where e.PortfolioId == portfolioId
+                                        where e.UserId == id
                                         select e.EmailId).ToArray();
 
                     int emailArrayCount = emailIdArray.Count();
@@ -262,11 +288,17 @@ namespace WebPortfolioCoreApi.Controllers
                             context.Remove(email);
                             context.SaveChanges();
                         }
+
+                        mailBool = true;
+                    }
+                    else
+                    {
+                        mailBool = true;
                     }
 
-                    // Searching right questbook messages with portfolio ID
+                    // Searching right questbook messages with user ID
                     var messageIdArray = (from qm in context.QuestbookMessages
-                                          where qm.PortfolioId == portfolioId
+                                          where qm.UserId == id
                                           select qm.MessageId).ToArray();
 
                     int messageArrayCount = messageIdArray.Count();
@@ -285,13 +317,17 @@ namespace WebPortfolioCoreApi.Controllers
                             }
                         }
                     }
+                    else
+                    {
+                        messageBool = true;
+                    }
 
                     // Searching images with user ID
                     var imageIdArray = (from iu in context.ImageUrls
                                         where iu.UserId == id
                                         select iu.UrlId).ToArray();
 
-                    int urlArrayCount = messageIdArray.Count();
+                    int urlArrayCount = imageIdArray.Count();
 
                     if (urlArrayCount > 0)
                     {
@@ -307,11 +343,15 @@ namespace WebPortfolioCoreApi.Controllers
                             }
                         }
                     }
+                    else
+                    {
+                        imageBool = true;
+                    }
 
-                    // Searching social media links with portfolio ID
+                    // Searching social media links with user ID
                     var linkIdArray = (from sml in context.SocialMediaLinks
-                                        where sml.PortfolioId == portfolioId
-                                        select sml.LinkId).ToArray();
+                                       where sml.UserId == id
+                                       select sml.LinkId).ToArray();
 
                     int linkArrayCount = linkIdArray.Count();
 
@@ -329,11 +369,15 @@ namespace WebPortfolioCoreApi.Controllers
                             }
                         }
                     }
+                    else
+                    {
+                        linkBool = true;
+                    }
 
                     // Searching social media links with portfolio ID
                     var skillIdArray = (from s in context.Skills
-                                       where s.UserId == id
-                                       select s.SkillId).ToArray();
+                                        where s.UserId == id
+                                        select s.SkillId).ToArray();
 
                     int skillArrayCount = skillIdArray.Count();
 
@@ -351,14 +395,27 @@ namespace WebPortfolioCoreApi.Controllers
                             }
                         }
                     }
+                    else
+                    {
+                        skillBool = true;
+                    }
+
+                    // Searching right portfolio with user ID
+                    int portfolioId = (from pc in context.PortfolioContent
+                                       where pc.UserId == id
+                                       select pc.PortfolioId).FirstOrDefault();
 
                     // At the end, search the right portfolio and remove it
-                    if ((messageBool = true) && (imageBool = true) && (linkBool = true) && (skillBool = true))
+                    if ((mailBool = true) && (messageBool = true) && (imageBool = true) && (linkBool = true) && (skillBool = true))
                     {
                         PortfolioContent portfolio = context.PortfolioContent.Find(portfolioId);
 
                         context.Remove(portfolio);
                         context.SaveChanges();
+                    }
+                    else
+                    {
+                        return false;
                     }
                 }
 

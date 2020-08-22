@@ -15,6 +15,7 @@ namespace WebPortfolioCoreApi.Models
         {
         }
 
+        public virtual DbSet<Documentation> Documentation { get; set; }
         public virtual DbSet<Emails> Emails { get; set; }
         public virtual DbSet<ImageTypes> ImageTypes { get; set; }
         public virtual DbSet<ImageUrls> ImageUrls { get; set; }
@@ -37,6 +38,28 @@ namespace WebPortfolioCoreApi.Models
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<Documentation>(entity =>
+            {
+                entity.Property(e => e.DocumentationId).HasColumnName("DocumentationID");
+
+                entity.Property(e => e.AvailableRoute)
+                    .IsRequired()
+                    .HasMaxLength(100);
+
+                entity.Property(e => e.Controller)
+                    .IsRequired()
+                    .HasMaxLength(50);
+
+                entity.Property(e => e.Description)
+                    .IsRequired()
+                    .HasMaxLength(500);
+
+                entity.Property(e => e.Method)
+                    .IsRequired()
+                    .HasMaxLength(6)
+                    .IsFixedLength();
+            });
+
             modelBuilder.Entity<Emails>(entity =>
             {
                 entity.HasKey(e => e.EmailId);
@@ -47,13 +70,13 @@ namespace WebPortfolioCoreApi.Models
                     .IsRequired()
                     .HasMaxLength(150);
 
-                entity.Property(e => e.PortfolioId).HasColumnName("PortfolioID");
+                entity.Property(e => e.UserId).HasColumnName("UserID");
 
-                entity.HasOne(d => d.Portfolio)
+                entity.HasOne(d => d.User)
                     .WithMany(p => p.Emails)
-                    .HasForeignKey(d => d.PortfolioId)
+                    .HasForeignKey(d => d.UserId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_Emails_PortfolioContent");
+                    .HasConstraintName("FK_Emails_Users");
             });
 
             modelBuilder.Entity<ImageTypes>(entity =>
@@ -106,13 +129,9 @@ namespace WebPortfolioCoreApi.Models
 
                 entity.Property(e => e.Country).HasMaxLength(50);
 
-                entity.Property(e => e.Firstname)
-                    .IsRequired()
-                    .HasMaxLength(50);
+                entity.Property(e => e.Firstname).HasMaxLength(50);
 
-                entity.Property(e => e.Lastname)
-                    .IsRequired()
-                    .HasMaxLength(50);
+                entity.Property(e => e.Lastname).HasMaxLength(50);
 
                 entity.Property(e => e.Phonenumber).HasMaxLength(30);
 
@@ -152,17 +171,17 @@ namespace WebPortfolioCoreApi.Models
 
                 entity.Property(e => e.MessageId).HasColumnName("MessageID");
 
-                entity.Property(e => e.PortfolioId).HasColumnName("PortfolioID");
+                entity.Property(e => e.UserId).HasColumnName("UserID");
 
                 entity.Property(e => e.VisitationTimestamp).HasColumnType("datetime");
 
                 entity.Property(e => e.VisitorId).HasColumnName("VisitorID");
 
-                entity.HasOne(d => d.Portfolio)
+                entity.HasOne(d => d.User)
                     .WithMany(p => p.QuestbookMessages)
-                    .HasForeignKey(d => d.PortfolioId)
+                    .HasForeignKey(d => d.UserId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_QuestbookMessages_PortfolioContent");
+                    .HasConstraintName("FK_QuestbookMessages_Users");
 
                 entity.HasOne(d => d.Visitor)
                     .WithMany(p => p.QuestbookMessages)
@@ -198,21 +217,21 @@ namespace WebPortfolioCoreApi.Models
 
                 entity.Property(e => e.Link).HasMaxLength(200);
 
-                entity.Property(e => e.PortfolioId).HasColumnName("PortfolioID");
-
                 entity.Property(e => e.ServiceId).HasColumnName("ServiceID");
 
-                entity.HasOne(d => d.Portfolio)
-                    .WithMany(p => p.SocialMediaLinks)
-                    .HasForeignKey(d => d.PortfolioId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_SocialMediaLinks_PortfolioContent");
+                entity.Property(e => e.UserId).HasColumnName("UserID");
 
                 entity.HasOne(d => d.Service)
                     .WithMany(p => p.SocialMediaLinks)
                     .HasForeignKey(d => d.ServiceId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_SocialMediaLinks_SocialMediaServices");
+
+                entity.HasOne(d => d.User)
+                    .WithMany(p => p.SocialMediaLinks)
+                    .HasForeignKey(d => d.UserId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_SocialMediaLinks_Users");
             });
 
             modelBuilder.Entity<SocialMediaServices>(entity =>
@@ -235,6 +254,11 @@ namespace WebPortfolioCoreApi.Models
                 entity.Property(e => e.Password)
                     .IsRequired()
                     .HasMaxLength(32)
+                    .IsUnicode(false)
+                    .IsFixedLength();
+
+                entity.Property(e => e.Token)
+                    .HasMaxLength(199)
                     .IsUnicode(false)
                     .IsFixedLength();
 

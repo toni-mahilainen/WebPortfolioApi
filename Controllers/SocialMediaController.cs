@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using WebPortfolioCoreApi.Models;
 
 namespace WebPortfolioCoreApi.Controllers
@@ -12,8 +15,8 @@ namespace WebPortfolioCoreApi.Controllers
     [ApiController]
     public class SocialMediaController : ControllerBase
     {
-        // GET: api/socialmedia/{portfolioId}
-        // Get all social media links for users portfolio
+        // GET: api/socialmedia/{userId}
+        // Get all links to social media for user
         [HttpGet]
         [Route("{id}")]
         public ActionResult GetLinks(int id)
@@ -23,11 +26,10 @@ namespace WebPortfolioCoreApi.Controllers
             try
             {
                 var allLinks = (from sml in context.SocialMediaLinks
-                                where sml.PortfolioId == id
+                                where sml.UserId == id
                                 select new
                                 {
                                     sml.LinkId,
-                                    sml.PortfolioId,
                                     sml.ServiceId,
                                     sml.Link
                                 }).ToList();
@@ -44,40 +46,62 @@ namespace WebPortfolioCoreApi.Controllers
             }
         }
 
-        // POST: api/socialmedia/{portfolioId}
-        // Add new social media link for specific portfolio
+        // POST: api/socialmedia/{userId}
+        // Add a new social media service links or update existing ones for user
         [HttpPost]
         [Route("{id}")]
-        public ActionResult AddLink(int id, [FromBody] SocialMediaLinks newLink)
+        public ActionResult AddOrUpdateLinks(int id, [FromBody] JsonElement jsonElement)
         {
             WebPortfolioContext context = new WebPortfolioContext();
 
+            // Converts json element to string
+            string json = System.Text.Json.JsonSerializer.Serialize(jsonElement);
+
+            // Converts json string to JSON object
+            var obj = JsonConvert.DeserializeObject<JObject>(json);
+
             try
             {
-                // Check if user already have a link for service. If not an addition is made to the database
-                SocialMediaLinks linkCheck = (from sml in context.SocialMediaLinks
-                                              where sml.ServiceId == newLink.ServiceId
-                                              select sml).FirstOrDefault();
+                // Converts nested "Services" JSON object to an array and save count of an array to variable
+                var servicesArray = obj["Services"].ToArray();
+                int servicesArrayCount = servicesArray.Count();
 
-                if (linkCheck == null)
+                // Adds as many links as the count of an array indicates
+                for (int a = 0; a < servicesArrayCount; a++)
                 {
-                    // Placed new link info to an object and adding it to database
-                    SocialMediaLinks link = new SocialMediaLinks
+                    int linkId = int.Parse(servicesArray[a]["LinkId"].ToString());
+
+                    // If the link is new (linkId == 0), a create operation is made to database. Otherwise an update
+                    if (linkId == 0)
                     {
-                        PortfolioId = id,
-                        ServiceId = newLink.ServiceId,
-                        Link = newLink.Link
-                    };
+                        SocialMediaLinks link = new SocialMediaLinks
+                        {
+                            UserId = id,
+                            ServiceId = int.Parse(servicesArray[a]["ServiceId"].ToString()),
+                            Link = servicesArray[a]["Link"].ToString()
+                        };
 
-                    context.SocialMediaLinks.Add(link);
-                    context.SaveChanges();
-                }
-                else
-                {
-                    return NotFound("Portfolio already includes a link for service.");
+                        context.SocialMediaLinks.Add(link);
+                        context.SaveChanges();
+                    }
+                    else
+                    {
+                        // Updates the link
+                        SocialMediaLinks link = new SocialMediaLinks
+                        {
+                            UserId = id,
+                            ServiceId = int.Parse(servicesArray[a]["ServiceId"].ToString()),
+                            Link = servicesArray[a]["Link"].ToString()
+                        };
+
+                        if (!UpdateLink(linkId, link))
+                        {
+                            return BadRequest("Problem detected while updating social media link. Link ID: " + linkId);
+                        }
+                    }
                 }
 
-                return Ok("New link has added to portfolio!");
+                return Ok("New links has added to portfolio!");
             }
             catch (Exception ex)
             {
@@ -89,11 +113,8 @@ namespace WebPortfolioCoreApi.Controllers
             }
         }
 
-        // PUT: api/socialmedia/{linkId}
         // Update a single link for social media service
-        [HttpPut]
-        [Route("{id}")]
-        public ActionResult UpdateLink(int id, [FromBody] SocialMediaLinks newLink)
+        static public bool UpdateLink(int id, SocialMediaLinks newLink)
         {
             WebPortfolioContext context = new WebPortfolioContext();
 
@@ -108,11 +129,11 @@ namespace WebPortfolioCoreApi.Controllers
                 oldLink.Link = newLink.Link;
                 context.SaveChanges();
 
-                return Ok("Link has updated succesfully!");
+                return true;
             }
-            catch (Exception ex)
+            catch
             {
-                return BadRequest("Problem detected while updating a link. Link ID: " + id + ". Error message: " + ex.Message);
+                return false;
             }
             finally
             {
@@ -121,7 +142,7 @@ namespace WebPortfolioCoreApi.Controllers
         }
 
         // DELETE: api/socialmedia/{linkId}
-        // Delete a link
+        // Delete the link
         [HttpDelete]
         [Route("{id}")]
         public ActionResult DeleteLink(int id)
@@ -150,7 +171,7 @@ namespace WebPortfolioCoreApi.Controllers
             }
         }
 
-        // Delete all message
+        // Delete all links
         static public bool DeleteAllLinks(int id)
         {
             WebPortfolioContext context = new WebPortfolioContext();

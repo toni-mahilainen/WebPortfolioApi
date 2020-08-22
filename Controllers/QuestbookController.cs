@@ -23,25 +23,21 @@ namespace WebPortfolioCoreApi.Controllers
 
             try
             {
-                // Searching right portfolio with user ID
-                var portfolioId = (from p in context.PortfolioContent
-                                 where p.UserId == id
-                                 select p.PortfolioId).FirstOrDefault();
-
                 // Searching all visitors/messages with portfolio ID
                 var questbookContent = (from q in context.QuestbookMessages
-                                        where q.PortfolioId == portfolioId
+                                        where q.UserId == id
                                         join v in context.Visitors
                                         on q.VisitorId equals v.VisitorId
-                                        select new 
-                                        { 
+                                        select new
+                                        {
+                                            q.MessageId,
                                             v.Firstname,
                                             v.Lastname,
                                             v.Company,
                                             q.VisitationTimestamp,
                                             q.Message
                                         }).ToList();
-                               
+
                 return Ok(questbookContent);
             }
             catch (Exception ex)
@@ -54,8 +50,8 @@ namespace WebPortfolioCoreApi.Controllers
             }
         }
 
-        // POST: api/questbook/{portfolioId}
-        // Add new message
+        // POST: api/questbook/{userId}
+        // Add a new message
         [HttpPost]
         [Route("{id}")]
         public ActionResult AddNewMessage(int id, [FromBody] NewMessage newMessage)
@@ -64,30 +60,49 @@ namespace WebPortfolioCoreApi.Controllers
 
             try
             {
-                // Placed visitor info to an object and adding it to database
-                Visitors visitor = new Visitors
+                // Check if a visitor already exists in the database
+                var existingVisitor = (from v in context.Visitors
+                                       where v.Firstname == newMessage.VisitorFirstname &&
+                                       v.Lastname == newMessage.VisitorLastname &&
+                                       v.Company == newMessage.VisitorCompany
+                                       select v).FirstOrDefault();
+
+                int visitorId = 0;
+
+                if (existingVisitor == null)
                 {
-                    Firstname = newMessage.VisitorFirstname,
-                    Lastname = newMessage.VisitorLastname,
-                    Company = newMessage.VisitorCompany
-                };
+                    // If a visitor is new, it will be added to database
+                    // Placed visitor info to an object and adding it to database
+                    Visitors visitor = new Visitors
+                    {
+                        Firstname = newMessage.VisitorFirstname,
+                        Lastname = newMessage.VisitorLastname,
+                        Company = newMessage.VisitorCompany
+                    };
 
-                context.Visitors.Add(visitor);
-                context.SaveChanges();
+                    context.Visitors.Add(visitor);
+                    context.SaveChanges();
 
-                // Searching for last added visitor ID and adding other message and other information to database
-                int visitorId = (from v in context.Visitors
+                    // Searching for last added visitor ID and adding other message and other information to database
+                    visitorId = (from v in context.Visitors
                                  orderby v.VisitorId ascending
                                  select v.VisitorId).LastOrDefault();
+                }
+                else
+                {
+                    // If a visitor already exists in the database
+                    visitorId = existingVisitor.VisitorId;
+                }
 
+                // New message to database
                 QuestbookMessages messageAndOthers = new QuestbookMessages
                 {
-                    PortfolioId = id,
+                    UserId = id,
                     VisitorId = visitorId,
                     Message = newMessage.Message,
                     VisitationTimestamp = newMessage.VisitationTimestamp
                 };
-                
+
                 context.QuestbookMessages.Add(messageAndOthers);
                 context.SaveChanges();
 
@@ -104,7 +119,7 @@ namespace WebPortfolioCoreApi.Controllers
         }
 
         // DELETE: api/questbook/{messageId}
-        // Delete message
+        // Delete the message
         [HttpDelete]
         [Route("{id}")]
         public ActionResult DeleteMessage(int id)

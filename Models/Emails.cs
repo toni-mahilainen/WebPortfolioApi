@@ -6,9 +6,9 @@ namespace WebPortfolioCoreApi.Models
     public partial class Emails
     {
         public int EmailId { get; set; }
-        public int PortfolioId { get; set; }
+        public int UserId { get; set; }
         public string EmailAddress { get; set; }
 
-        public virtual PortfolioContent Portfolio { get; set; }
+        public virtual Users User { get; set; }
     }
 }
