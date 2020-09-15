@@ -128,6 +128,83 @@ namespace WebPortfolioCoreApi.Controllers
             }
         }
 
+        // Add default portfolio content to new user
+        static public bool AddDefaultContent(string username)
+        {
+            WebPortfolioContext context = new WebPortfolioContext();
+
+            try
+            {
+                int userId = (from u in context.Users
+                              where u.Username == username
+                              select u.UserId).FirstOrDefault();
+
+                // Adding default content to database
+                PortfolioContent newPortfolio = new PortfolioContent
+                {
+                    UserId = userId,
+                    Firstname = "",
+                    Lastname = "",
+                    Birthdate = new DateTime(1900, 01, 01),
+                    City = "",
+                    Country = "",
+                    Phonenumber = "",
+                    Punchline = "",
+                    BasicKnowledge = "",
+                    Education = "",
+                    WorkHistory = "",
+                    LanguageSkills = ""
+                };
+
+                context.PortfolioContent.Add(newPortfolio);
+                context.SaveChanges();
+
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+            finally
+            {
+                context.Dispose();
+            }
+        }
+
+        // Add default email addresses to the new user
+        static public bool AddDefaultEmails(string username)
+        {
+            WebPortfolioContext context = new WebPortfolioContext();
+
+            try
+            {
+                int userId = (from u in context.Users
+                              where u.Username == username
+                              select u.UserId).FirstOrDefault();
+
+                for (int i = 0; i < 2; i++)
+                {
+                    Emails emails = new Emails
+                    {
+                        UserId = userId,
+                        EmailAddress = ""
+                    };
+                    context.Emails.Add(emails);
+                    context.SaveChanges();
+                }
+
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+            finally
+            {
+                context.Dispose();
+            }
+        }
+
         // POST: api/portfoliocontent/emails/{userId}
         // Add email addresses to user
         [HttpPost]

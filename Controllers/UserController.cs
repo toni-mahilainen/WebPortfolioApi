@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.IdentityModel.Tokens;
 using WebPortfolioCoreApi.Models;
 using WebPortfolioCoreApi.OtherModels;
@@ -150,9 +151,15 @@ namespace WebPortfolioCoreApi.Controllers
             try
             {
                 context.Users.Add(newUser);
-                context.SaveChanges();
 
-                return Ok("New user has created!");
+                // Add a portfolio content with default values to the new user
+                if (context.SaveChanges() > 0)
+                {
+                    PortfolioContentController.AddDefaultContent(newUser.Username);
+                    PortfolioContentController.AddDefaultEmails(newUser.Username);
+                }
+
+                return Ok("New user has created and the portfolio content with default values has added!");
             }
             catch (Exception ex)
             {
