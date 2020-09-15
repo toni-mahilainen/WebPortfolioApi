@@ -47,10 +47,10 @@ namespace WebPortfolioCoreApi.Controllers
         }
 
         // POST: api/skills/{userId}
-        // Add/updates users skills/projects to database
+        // Add/update users skills to database
         [HttpPost]
         [Route("{id}")]
-        public ActionResult AddOrUpdateSkillsAndProjects(int id, [FromBody] JsonElement jsonElement)
+        public ActionResult AddOrUpdateSkills(int id, [FromBody] JsonElement jsonElement)
         {
             WebPortfolioContext context = new WebPortfolioContext();
 
@@ -69,9 +69,8 @@ namespace WebPortfolioCoreApi.Controllers
                 // Adds as many skills as the count of an array indicates
                 for (int i = 0; i < skillArrayCount; i++)
                 {
-                    int lastAddedSkillId = 0;
                     int skillId = int.Parse(skillsArray[i]["SkillId"].ToString());
-                    // If skill is new (skillId == 0), a create is made to database. Otherwise an update
+                    // If skill is new (skillId == 0), creation is made to database. Otherwise an update
                     if (skillId == 0)
                     {
                         // Adds new skill to database
@@ -84,12 +83,6 @@ namespace WebPortfolioCoreApi.Controllers
 
                         context.Skills.Add(skill);
                         context.SaveChanges();
-
-                        // Get last added skill ID for specific user
-                        lastAddedSkillId = (from s in context.Skills
-                                            where s.UserId == id
-                                            orderby s.SkillId ascending
-                                            select s.SkillId).Last();
                     }
                     else
                     {
@@ -105,58 +98,9 @@ namespace WebPortfolioCoreApi.Controllers
                             return BadRequest("Problem detected while updating the skill for user " + id + ".");
                         }
                     }
-
-                    // Converts nested "Projects" JSON object to an array and save count of an array to variable
-                    var projectsArray = obj["Skills"][i]["Projects"].ToArray();
-                    int projectArrayCount = projectsArray.Count();
-
-                    // Adds as many projects as the count of an array indicates
-                    for (int a = 0; a < projectArrayCount; a++)
-                    {
-                        int projectId = int.Parse(projectsArray[a]["ProjectId"].ToString());
-                        // If projects is new (projectId == 0), a create is made to database. Otherwise an update
-                        if (projectId == 0)
-                        {
-                            Projects project = new Projects();
-
-                            // if the skill that was added was already exists, skill ID comes from variable "skillId"
-                            if (lastAddedSkillId == 0)
-                            {
-                                project.SkillId = skillId;
-                                project.Name = projectsArray[a]["Name"].ToString();
-                                project.Link = projectsArray[a]["Link"].ToString();
-                                project.Description = projectsArray[a]["Description"].ToString();
-                            }
-                            else
-                            {
-                                project.SkillId = lastAddedSkillId;
-                                project.Name = projectsArray[a]["Name"].ToString();
-                                project.Link = projectsArray[a]["Link"].ToString();
-                                project.Description = projectsArray[a]["Description"].ToString();
-                            }
-
-                            context.Projects.Add(project);
-                            context.SaveChanges();
-                        }
-                        else
-                        {
-                            // Updates the project
-                            Projects project = new Projects
-                            {
-                                Name = projectsArray[a]["Name"].ToString(),
-                                Link = projectsArray[a]["Link"].ToString(),
-                                Description = projectsArray[a]["Description"].ToString()
-                            };
-
-                            if (!ProjectsController.UpdateProject(projectId, project))
-                            {
-                                return BadRequest("Problem detected while updating project for skill " + lastAddedSkillId + ".");
-                            }
-                        }
-                    }
                 }
 
-                return Ok("Skills/projects has saved!");
+                return Ok("Skills has saved!");
             }
             catch (Exception ex)
             {

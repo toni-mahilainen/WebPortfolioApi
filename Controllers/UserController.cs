@@ -17,6 +17,79 @@ namespace WebPortfolioCoreApi.Controllers
     [ApiController]
     public class UserController : ControllerBase
     {
+        // POST: api/user/checklogin
+        // Check the correction of login credentials when signing in
+        [HttpPost]
+        [Route("checklogin")]
+        public ActionResult CheckSignIn([FromBody] Users loginCredentials)
+        {
+            WebPortfolioContext context = new WebPortfolioContext();
+
+            try
+            {
+                var user = (from u in context.Users
+                            where u.Username == loginCredentials.Username
+                            select u).FirstOrDefault();
+
+                if (user != null)
+                {
+                    if (user.Password == loginCredentials.Password)
+                    {
+                        return Ok("Login succesfull!");
+                    }
+                    else
+                    {
+                        return NotFound("Inccorrect password!");
+                    }
+                }
+                else
+                {
+                    return NotFound("Inccorrect username!");
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest("Problem detected while checking the login credentials. Error message: " + ex.Message);
+            }
+            finally
+            {
+                context.Dispose();
+            }
+        }
+
+        // POST: api/user/usernamecheck
+        // Check the correction of login credentials when signing in
+        [HttpPost]
+        [Route("usernamecheck/{username}")]
+        public ActionResult IsUsernameInUse(string username)
+        {
+            WebPortfolioContext context = new WebPortfolioContext();
+
+            try
+            {
+                var user = (from u in context.Users
+                            where u.Username == username
+                            select u).FirstOrDefault();
+
+                if (user == null)
+                {
+                    return Ok("The username '" + username + "' is not in use!");
+                }
+                else
+                {
+                    return NotFound("The username '" + username + "' is already in use!");
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest("Problem detected while checking if the username is already exists. Error message: " + ex.Message);
+            }
+            finally
+            {
+                context.Dispose();
+            }
+        }
+
         // GET: api/user/auth
         // Check if the user is authenticated
         [HttpGet]
