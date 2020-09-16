@@ -72,20 +72,36 @@ namespace WebPortfolioCoreApi.Controllers
                         int typeId = int.Parse(row["TypeID"].ToString());
                         string url = row["Url"].ToString();
 
-                        // Adds image urls to database
-                        ImageUrls newImage = new ImageUrls
-                        {
-                            UserId = id,
-                            TypeId = typeId,
-                            Url = url
-                        };
+                        ImageUrls oldImage = (from iu in context.ImageUrls
+                                              where iu.UserId == id && iu.TypeId == typeId
+                                              select iu).FirstOrDefault();
 
-                        context.ImageUrls.Add(newImage);
-                        context.SaveChanges();
+                        if (oldImage != null)
+                        {
+                            // If image url has changed, it will be updated to database
+                            if (url != oldImage.Url)
+                            {
+                                oldImage.Url = url;
+                                context.SaveChanges();
+                            }
+                        }
+                        else
+                        {
+                            // Adds image urls to database
+                            ImageUrls newImage = new ImageUrls
+                            {
+                                UserId = id,
+                                TypeId = typeId,
+                                Url = url
+                            };
+
+                            context.ImageUrls.Add(newImage);
+                            context.SaveChanges();
+                        }
                     }
                 }
 
-                return Ok("Images has added succesfully!");
+                return Ok("The Image has added/updated succesfully!");
             }
             catch (Exception ex)
             {
@@ -128,31 +144,15 @@ namespace WebPortfolioCoreApi.Controllers
                                               where iu.UserId == id && iu.TypeId == typeId
                                               select iu).FirstOrDefault();
 
-                        if (oldImage != null)
+                        // If image url has changed, it will be updated to database
+                        if (newUrl != oldImage.Url)
                         {
-                            // If image url has changed, it will be updated to database
-                            if (newUrl != oldImage.Url)
-                            {
-                                oldImage.Url = newUrl;
-                                context.SaveChanges();
-                            }
-                        }
-                        else
-                        {
-                            // Adds image urls to database
-                            ImageUrls newImage = new ImageUrls
-                            {
-                                UserId = id,
-                                TypeId = typeId,
-                                Url = newUrl
-                            };
-
-                            context.ImageUrls.Add(newImage);
+                            oldImage.Url = newUrl;
                             context.SaveChanges();
                         }
                     }
 
-                    return Ok("Images updated/added succesfully!");
+                    return Ok("Image has updated succesfully!");
                 }
                 else
                 {
