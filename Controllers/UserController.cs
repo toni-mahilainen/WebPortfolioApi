@@ -3,12 +3,18 @@ using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using System.Web;
+using Azure.Storage;
+using Azure.Storage.Blobs;
+using Azure.Storage.Sas;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.WindowsAzure.Storage;
 using WebPortfolioCoreApi.Models;
 using WebPortfolioCoreApi.OtherModels;
 
@@ -91,6 +97,39 @@ namespace WebPortfolioCoreApi.Controllers
             }
         }
 
+        // GET: api/user/userid
+        // Get user ID for the public portfolio
+        [HttpGet]
+        [Route("userid/{username}")]
+        public ActionResult GetUserId(string username)
+        {
+            WebPortfolioContext context = new WebPortfolioContext();
+
+            try
+            {
+                int id = (from u in context.Users
+                          where u.Username == username
+                          select u.UserId).FirstOrDefault();
+
+                if (id != 0)
+                {
+                    return Ok(id);
+                }
+                else
+                {
+                    return NotFound("Could not found any user with username " + username);
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest("Problem! Message: " + ex.InnerException);
+            }
+            finally
+            {
+                context.Dispose();
+            }
+        }
+
         // GET: api/user/auth
         // Check if the user is authenticated
         [HttpGet]
@@ -116,7 +155,7 @@ namespace WebPortfolioCoreApi.Controllers
                     // If user have the same token in database, authentication is succeesed
                     Users login = context.Users.Find(id);
 
-                    if (token == login.Token)
+                    if (token == login.JwtToken)
                     {
                         return Ok("You are authenticated!");
                     }
@@ -152,9 +191,10 @@ namespace WebPortfolioCoreApi.Controllers
             {
                 context.Users.Add(newUser);
 
-                // Add a portfolio content with default values to the new user
+                // Add a SAS token and the portfolio content with default values to a new user
                 if (context.SaveChanges() > 0)
                 {
+                    AddSasToUser(context, newUser.Username);
                     PortfolioContentController.AddDefaultContent(newUser.Username);
                     PortfolioContentController.AddDefaultEmails(newUser.Username);
                 }
@@ -212,7 +252,8 @@ namespace WebPortfolioCoreApi.Controllers
 
                 if (user != null)
                 {
-                    string tokenString = "";
+                    // Create a new SAS token for Azure Blob Storage
+                    string sasToken = AddSasToUser(context, user.Username);
 
                     // Random key for token
                     string secretKey = RandomString(20);
@@ -228,19 +269,26 @@ namespace WebPortfolioCoreApi.Controllers
                             new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
                             new Claim(ClaimTypes.Name, user.Username)
                         }),
-                        Expires = DateTime.Now.AddHours(2),
+                        Expires = DateTime.Now.AddHours(1),
                         SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)), SecurityAlgorithms.HmacSha256),
                     };
 
                     // Creates a token based to description
                     var token = tokenHandler.CreateToken(tokenDescription);
-                    tokenString = tokenHandler.WriteToken(token);
+                    string tokenString = tokenHandler.WriteToken(token);
 
-                    // Save token to database
-                    user.Token = tokenString;
-                    context.SaveChanges();
+                    // Save token to the database
+                    user.JwtToken = tokenString;
 
-                    return Ok(tokenString);
+                    if (context.SaveChanges() > 0 && sasToken != null)
+                    {
+                        return Ok(tokenString + "|" + sasToken);
+                    }
+                    else
+                    {
+                        Exception ex = new Exception();
+                        return BadRequest("Failed to create tokens! Error message: " + ex.InnerException);
+                    }
                 }
                 else
                 {
@@ -325,6 +373,72 @@ namespace WebPortfolioCoreApi.Controllers
             {
                 context.Dispose();
             }
+        }
+
+        // GET: api/user/sas/
+        // Delete an account
+        [HttpGet]
+        [Route("sas")]
+        public ActionResult GetSasForPublicPortfolio()
+        {
+            // Account name and access key
+            var storageAccountName = "webportfolio";
+            var accessKey = "<Microsoft Azure Storage Account Access Key>";
+
+            var connectionString = string.Format("DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1}", storageAccountName, accessKey);
+            var storageAccount = CloudStorageAccount.Parse(connectionString);
+
+            // Generate a SAS token for the user's container/object to Webportfolio's Storage Account
+            SharedAccessAccountPolicy policy = new SharedAccessAccountPolicy()
+            {
+                Permissions = SharedAccessAccountPermissions.Read,
+                Services = SharedAccessAccountServices.Blob,
+                ResourceTypes = SharedAccessAccountResourceTypes.Object,
+                SharedAccessStartTime = DateTime.UtcNow.AddHours(-1),
+                SharedAccessExpiryTime = DateTime.UtcNow.AddHours(1),
+                Protocols = SharedAccessProtocol.HttpsOnly
+            };
+            string sasToken = storageAccount.GetSharedAccessSignature(policy);
+
+            return Ok(sasToken);
+        }
+
+        private string AddSasToUser(WebPortfolioContext context, string username)
+        {
+            // Search the user which has added recently
+            Users addedUser = (from u in context.Users
+                               where u.Username == username
+                               select u).FirstOrDefault();
+
+            // Account name and access key
+            var storageAccountName = "webportfolio";
+            var accessKey = "UHKSMKOG7g8YYMNJEDXXUG6mXH+C7vWPcpTfcxoFsjQRobuqEZXHfTl9oiA9/nl8yuj+uBXh36/z9mn2+mfQkA==";
+
+            var connectionString = string.Format("DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1}", storageAccountName, accessKey);
+            var storageAccount = CloudStorageAccount.Parse(connectionString);
+
+            // Generate a SAS token for the user's container/object to Webportfolio's Storage Account
+            SharedAccessAccountPolicy policy = new SharedAccessAccountPolicy()
+            {
+                Permissions = SharedAccessAccountPermissions.Write |
+                              SharedAccessAccountPermissions.Create |
+                              SharedAccessAccountPermissions.Read |
+                              SharedAccessAccountPermissions.Delete |
+                              SharedAccessAccountPermissions.Add |
+                              SharedAccessAccountPermissions.List,
+                Services = SharedAccessAccountServices.Blob,
+                ResourceTypes = SharedAccessAccountResourceTypes.Object | SharedAccessAccountResourceTypes.Container,
+                SharedAccessStartTime = DateTime.UtcNow.AddHours(-1),
+                SharedAccessExpiryTime = DateTime.UtcNow.AddHours(8),
+                Protocols = SharedAccessProtocol.HttpsOnly,
+            };
+            string sasToken = storageAccount.GetSharedAccessSignature(policy);
+
+            // Save the SAS token to database
+            addedUser.SasToken = sasToken;
+            context.SaveChanges();
+
+            return sasToken;
         }
     }
 }

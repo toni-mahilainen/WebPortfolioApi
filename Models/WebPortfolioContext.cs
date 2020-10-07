@@ -251,16 +251,15 @@ namespace WebPortfolioCoreApi.Models
 
                 entity.Property(e => e.UserId).HasColumnName("UserID");
 
+                entity.Property(e => e.JwtToken).HasMaxLength(500);
+
                 entity.Property(e => e.Password)
                     .IsRequired()
                     .HasMaxLength(32)
                     .IsUnicode(false)
                     .IsFixedLength();
 
-                entity.Property(e => e.Token)
-                    .HasMaxLength(199)
-                    .IsUnicode(false)
-                    .IsFixedLength();
+                entity.Property(e => e.SasToken).HasMaxLength(200);
 
                 entity.Property(e => e.Username)
                     .IsRequired()
