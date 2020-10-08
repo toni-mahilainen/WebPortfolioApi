@@ -18,7 +18,9 @@ namespace WebPortfolioCoreApi.Models
         public int UserId { get; set; }
         public string Username { get; set; }
         public string Password { get; set; }
-        public string Token { get; set; }
+        public string JwtToken { get; set; }
+        public string SasToken { get; set; }
+        public string PasswordResetToken { get; set; }
 
         public virtual ICollection<Emails> Emails { get; set; }
         public virtual ICollection<ImageUrls> ImageUrls { get; set; }

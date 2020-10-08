@@ -11,5 +11,6 @@ namespace WebPortfolioCoreApi.OtherModels
 
         public string NewPassword { get; set; }
 
+        public string ResetToken { get; set; }
     }
 }
