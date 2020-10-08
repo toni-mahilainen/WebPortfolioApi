@@ -138,11 +138,25 @@ namespace WebPortfolioCoreApi.Controllers
 
                 var visitor = context.Visitors.Find(visitorId);
 
+                // The count of messages for visitor
+                int messageCount = (from q in context.QuestbookMessages
+                                    where q.VisitorId == visitorId
+                                    select q).ToArray().Length;
+
                 // Deletion from the database is performed
                 if (message != null && visitor != null)
                 {
-                    context.Remove(message);
-                    context.Remove(visitor);
+                    // If the visitor has multiple messages, only the message will be deleted
+                    if (messageCount > 1)
+                    {
+                        context.Remove(message);
+                    }
+                    else
+                    {
+                        context.Remove(message);
+                        context.Remove(visitor);
+                    }
+                    
                     context.SaveChanges();
                 }
 
@@ -150,7 +164,7 @@ namespace WebPortfolioCoreApi.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest("Problem detected while deleting user. Error message: " + ex.Message);
+                return BadRequest("Problem detected while deleting user. Error message: " + ex.InnerException);
             }
             finally
             {
