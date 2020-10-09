@@ -13,20 +13,25 @@ namespace WebPortfolioCoreApi.Controllers
     [ApiController]
     public class QuestbookController : ControllerBase
     {
+        public WebPortfolioContext _context;
+
+        public QuestbookController(WebPortfolioContext context)
+        {
+            _context = context;
+        }
+
         // GET: api/questbook/{userId}
         // Get all visitors + messages
         [HttpGet]
         [Route("{id}")]
         public ActionResult GetAllMessages(int id)
         {
-            WebPortfolioContext context = new WebPortfolioContext();
-
             try
             {
                 // Searching all visitors/messages with portfolio ID
-                var questbookContent = (from q in context.QuestbookMessages
+                var questbookContent = (from q in _context.QuestbookMessages
                                         where q.UserId == id
-                                        join v in context.Visitors
+                                        join v in _context.Visitors
                                         on q.VisitorId equals v.VisitorId
                                         select new
                                         {
@@ -46,7 +51,7 @@ namespace WebPortfolioCoreApi.Controllers
             }
             finally
             {
-                context.Dispose();
+                _context.Dispose();
             }
         }
 
@@ -56,12 +61,10 @@ namespace WebPortfolioCoreApi.Controllers
         [Route("{id}")]
         public ActionResult AddNewMessage(int id, [FromBody] NewMessage newMessage)
         {
-            WebPortfolioContext context = new WebPortfolioContext();
-
             try
             {
                 // Check if a visitor already exists in the database
-                var existingVisitor = (from v in context.Visitors
+                var existingVisitor = (from v in _context.Visitors
                                        where v.Firstname == newMessage.VisitorFirstname &&
                                        v.Lastname == newMessage.VisitorLastname &&
                                        v.Company == newMessage.VisitorCompany
@@ -80,11 +83,11 @@ namespace WebPortfolioCoreApi.Controllers
                         Company = newMessage.VisitorCompany
                     };
 
-                    context.Visitors.Add(visitor);
-                    context.SaveChanges();
+                    _context.Visitors.Add(visitor);
+                    _context.SaveChanges();
 
                     // Searching for last added visitor ID and adding other message and other information to database
-                    visitorId = (from v in context.Visitors
+                    visitorId = (from v in _context.Visitors
                                  orderby v.VisitorId ascending
                                  select v.VisitorId).LastOrDefault();
                 }
@@ -103,8 +106,8 @@ namespace WebPortfolioCoreApi.Controllers
                     VisitationTimestamp = newMessage.VisitationTimestamp
                 };
 
-                context.QuestbookMessages.Add(messageAndOthers);
-                context.SaveChanges();
+                _context.QuestbookMessages.Add(messageAndOthers);
+                _context.SaveChanges();
 
                 return Ok("New message has saved!");
             }
@@ -114,7 +117,7 @@ namespace WebPortfolioCoreApi.Controllers
             }
             finally
             {
-                context.Dispose();
+                _context.Dispose();
             }
         }
 
@@ -124,22 +127,20 @@ namespace WebPortfolioCoreApi.Controllers
         [Route("{id}")]
         public ActionResult DeleteMessage(int id)
         {
-            WebPortfolioContext context = new WebPortfolioContext();
-
             try
             {
                 // Searching right message with ID
-                var message = context.QuestbookMessages.Find(id);
+                var message = _context.QuestbookMessages.Find(id);
 
                 // Searching a visitor who wrote the message
-                int visitorId = (from v in context.Visitors
+                int visitorId = (from v in _context.Visitors
                                  where v.VisitorId == message.VisitorId
                                  select v.VisitorId).FirstOrDefault();
 
-                var visitor = context.Visitors.Find(visitorId);
+                var visitor = _context.Visitors.Find(visitorId);
 
                 // The count of messages for visitor
-                int messageCount = (from q in context.QuestbookMessages
+                int messageCount = (from q in _context.QuestbookMessages
                                     where q.VisitorId == visitorId
                                     select q).ToArray().Length;
 
@@ -149,15 +150,15 @@ namespace WebPortfolioCoreApi.Controllers
                     // If the visitor has multiple messages, only the message will be deleted
                     if (messageCount > 1)
                     {
-                        context.Remove(message);
+                        _context.Remove(message);
                     }
                     else
                     {
-                        context.Remove(message);
-                        context.Remove(visitor);
+                        _context.Remove(message);
+                        _context.Remove(visitor);
                     }
                     
-                    context.SaveChanges();
+                    _context.SaveChanges();
                 }
 
                 return Ok("Message deleted succesfully!");
@@ -168,33 +169,31 @@ namespace WebPortfolioCoreApi.Controllers
             }
             finally
             {
-                context.Dispose();
+                _context.Dispose();
             }
         }
 
         // Delete all message
-        static public bool DeleteAllMessages(int id)
+        public bool DeleteAllMessages(int id)
         {
-            WebPortfolioContext context = new WebPortfolioContext();
-
             try
             {
                 // Searching right message with ID
-                var message = context.QuestbookMessages.Find(id);
+                var message = _context.QuestbookMessages.Find(id);
 
                 // Searching a visitor who wrote the message
-                int visitorId = (from v in context.Visitors
+                int visitorId = (from v in _context.Visitors
                                  where v.VisitorId == message.VisitorId
                                  select v.VisitorId).FirstOrDefault();
 
-                var visitor = context.Visitors.Find(visitorId);
+                var visitor = _context.Visitors.Find(visitorId);
 
                 // Deletion from the database is performed
                 if (message != null && visitor != null)
                 {
-                    context.Remove(message);
-                    context.Remove(visitor);
-                    context.SaveChanges();
+                    _context.Remove(message);
+                    _context.Remove(visitor);
+                    _context.SaveChanges();
                 }
 
                 return true;
@@ -202,10 +201,6 @@ namespace WebPortfolioCoreApi.Controllers
             catch
             {
                 return false;
-            }
-            finally
-            {
-                context.Dispose();
             }
         }
     }

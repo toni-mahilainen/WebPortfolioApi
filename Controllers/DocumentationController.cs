@@ -12,6 +12,13 @@ namespace WebPortfolioCoreApi.Controllers
     [ApiController]
     public class DocumentationController : ControllerBase
     {
+        public WebPortfolioContext _context;
+
+        public DocumentationController(WebPortfolioContext context)
+        {
+            _context = context;
+        }
+
         // Another comment because first commit
         // GET: api/documentation/
         // Get REST API documentation
@@ -19,12 +26,10 @@ namespace WebPortfolioCoreApi.Controllers
         [Route("")]
         public ActionResult GetDocumentation()
         {
-            WebPortfolioContext context = new WebPortfolioContext();
-
             try
             {
                 // Searching doc
-                var doc = (from d in context.Documentation
+                var doc = (from d in _context.Documentation
                            select d).ToList();
 
                 return Ok(doc);
@@ -35,7 +40,7 @@ namespace WebPortfolioCoreApi.Controllers
             }
             finally
             {
-                context.Dispose();
+                _context.Dispose();
             }
         }
     }

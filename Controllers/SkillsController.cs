@@ -15,17 +15,22 @@ namespace WebPortfolioCoreApi.Controllers
     [ApiController]
     public class SkillsController : ControllerBase
     {
+        public WebPortfolioContext _context;
+
+        public SkillsController(WebPortfolioContext context)
+        {
+            _context = context;
+        }
+
         // GET: api/skills/{userId}
         // Get all users skills
         [HttpGet]
         [Route("{id}")]
         public ActionResult GetSkills(int id)
         {
-            WebPortfolioContext context = new WebPortfolioContext();
-
             try
             {
-                var skills = (from s in context.Skills
+                var skills = (from s in _context.Skills
                               where s.UserId == id
                               select new
                               {
@@ -42,7 +47,7 @@ namespace WebPortfolioCoreApi.Controllers
             }
             finally
             {
-                context.Dispose();
+                _context.Dispose();
             }
         }
 
@@ -52,8 +57,6 @@ namespace WebPortfolioCoreApi.Controllers
         [Route("{id}")]
         public ActionResult AddOrUpdateSkills(int id, [FromBody] JsonElement jsonElement)
         {
-            WebPortfolioContext context = new WebPortfolioContext();
-
             // Converts json element to string
             string json = System.Text.Json.JsonSerializer.Serialize(jsonElement);
 
@@ -81,8 +84,8 @@ namespace WebPortfolioCoreApi.Controllers
                             SkillLevel = int.Parse(skillsArray[i]["SkillLevel"].ToString())
                         };
 
-                        context.Skills.Add(skill);
-                        context.SaveChanges();
+                        _context.Skills.Add(skill);
+                        _context.SaveChanges();
                     }
                     else
                     {
@@ -108,34 +111,28 @@ namespace WebPortfolioCoreApi.Controllers
             }
             finally
             {
-                context.Dispose();
+                _context.Dispose();
             }
         }
 
         // Update users skills
-        static public bool UpdateSkill(int id, Skills newSkill)
+        public bool UpdateSkill(int id, Skills newSkill)
         {
-            WebPortfolioContext context = new WebPortfolioContext();
-
             try
             {
-                Skills oldSkill = (from s in context.Skills
+                Skills oldSkill = (from s in _context.Skills
                                    where s.SkillId == id
                                    select s).FirstOrDefault();
 
                 oldSkill.Skill = newSkill.Skill;
                 oldSkill.SkillLevel = newSkill.SkillLevel;
-                context.SaveChanges();
+                _context.SaveChanges();
 
                 return true;
             }
             catch
             {
                 return false;
-            }
-            finally
-            {
-                context.Dispose();
             }
         }
 
@@ -145,8 +142,6 @@ namespace WebPortfolioCoreApi.Controllers
         [Route("{id}")]
         public ActionResult DeleteSkill(int id)
         {
-            WebPortfolioContext context = new WebPortfolioContext();
-
             try
             {
                 // Removes all projects of the skill
@@ -154,25 +149,25 @@ namespace WebPortfolioCoreApi.Controllers
 
                 do
                 {
-                    project = (from p in context.Projects
+                    project = (from p in _context.Projects
                                where p.SkillId == id
                                select p).FirstOrDefault();
 
                     if (project != null)
                     {
-                        context.Remove(project);
-                        context.SaveChanges();
+                        _context.Remove(project);
+                        _context.SaveChanges();
                     }
 
                 } while (project != null);
 
                 // Removes the skill
-                var skill = context.Skills.Find(id);
+                var skill = _context.Skills.Find(id);
 
                 if (skill != null)
                 {
-                    context.Remove(skill);
-                    context.SaveChanges();
+                    _context.Remove(skill);
+                    _context.SaveChanges();
                 }
 
                 return Ok("Skill deleted succesfully!");
@@ -183,14 +178,12 @@ namespace WebPortfolioCoreApi.Controllers
             }
             finally
             {
-                context.Dispose();
+                _context.Dispose();
             }
         }
 
-        static public bool DeleteAllSkillAndProjects(int id)
+        public bool DeleteAllSkillAndProjects(int id)
         {
-            WebPortfolioContext context = new WebPortfolioContext();
-
             try
             {
                 // Removes all projects of the skill
@@ -198,25 +191,25 @@ namespace WebPortfolioCoreApi.Controllers
 
                 do
                 {
-                    project = (from p in context.Projects
+                    project = (from p in _context.Projects
                                where p.SkillId == id
                                select p).FirstOrDefault();
 
                     if (project != null)
                     {
-                        context.Remove(project);
-                        context.SaveChanges();
+                        _context.Remove(project);
+                        _context.SaveChanges();
                     }
 
                 } while (project != null);
 
                 // Removes the skill
-                var skill = context.Skills.Find(id);
+                var skill = _context.Skills.Find(id);
 
                 if (skill != null)
                 {
-                    context.Remove(skill);
-                    context.SaveChanges();
+                    _context.Remove(skill);
+                    _context.SaveChanges();
                 }
 
                 return true;
@@ -224,10 +217,6 @@ namespace WebPortfolioCoreApi.Controllers
             catch
             {
                 return false;
-            }
-            finally
-            {
-                context.Dispose();
             }
         }
     }

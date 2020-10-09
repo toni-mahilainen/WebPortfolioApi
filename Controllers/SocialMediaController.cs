@@ -15,17 +15,22 @@ namespace WebPortfolioCoreApi.Controllers
     [ApiController]
     public class SocialMediaController : ControllerBase
     {
+        public WebPortfolioContext _context;
+
+        public SocialMediaController(WebPortfolioContext context)
+        {
+            _context = context;
+        }
+
         // GET: api/socialmedia/{userId}
         // Get all links to social media for user
         [HttpGet]
         [Route("{id}")]
         public ActionResult GetLinks(int id)
         {
-            WebPortfolioContext context = new WebPortfolioContext();
-
             try
             {
-                var allLinks = (from sml in context.SocialMediaLinks
+                var allLinks = (from sml in _context.SocialMediaLinks
                                 where sml.UserId == id
                                 select new
                                 {
@@ -42,7 +47,7 @@ namespace WebPortfolioCoreApi.Controllers
             }
             finally
             {
-                context.Dispose();
+                _context.Dispose();
             }
         }
 
@@ -52,8 +57,6 @@ namespace WebPortfolioCoreApi.Controllers
         [Route("{id}")]
         public ActionResult AddOrUpdateLinks(int id, [FromBody] JsonElement jsonElement)
         {
-            WebPortfolioContext context = new WebPortfolioContext();
-
             // Converts json element to string
             string json = System.Text.Json.JsonSerializer.Serialize(jsonElement);
 
@@ -81,8 +84,8 @@ namespace WebPortfolioCoreApi.Controllers
                             Link = servicesArray[a]["Link"].ToString()
                         };
 
-                        context.SocialMediaLinks.Add(link);
-                        context.SaveChanges();
+                        _context.SocialMediaLinks.Add(link);
+                        _context.SaveChanges();
                     }
                     else
                     {
@@ -109,35 +112,29 @@ namespace WebPortfolioCoreApi.Controllers
             }
             finally
             {
-                context.Dispose();
+                _context.Dispose();
             }
         }
 
         // Update a single link for social media service
-        static public bool UpdateLink(int id, SocialMediaLinks newLink)
+        public bool UpdateLink(int id, SocialMediaLinks newLink)
         {
-            WebPortfolioContext context = new WebPortfolioContext();
-
             try
             {
                 // Get a link that need to update. New data is placed to database
-                SocialMediaLinks oldLink = (from sml in context.SocialMediaLinks
+                SocialMediaLinks oldLink = (from sml in _context.SocialMediaLinks
                                             where sml.LinkId == id
                                             select sml).FirstOrDefault();
 
                 oldLink.ServiceId = newLink.ServiceId;
                 oldLink.Link = newLink.Link;
-                context.SaveChanges();
+                _context.SaveChanges();
 
                 return true;
             }
             catch
             {
                 return false;
-            }
-            finally
-            {
-                context.Dispose();
             }
         }
 
@@ -147,16 +144,14 @@ namespace WebPortfolioCoreApi.Controllers
         [Route("{id}")]
         public ActionResult DeleteLink(int id)
         {
-            WebPortfolioContext context = new WebPortfolioContext();
-
             try
             {
-                var link = context.SocialMediaLinks.Find(id);
+                var link = _context.SocialMediaLinks.Find(id);
 
                 if (link != null)
                 {
-                    context.Remove(link);
-                    context.SaveChanges();
+                    _context.Remove(link);
+                    _context.SaveChanges();
                 }
 
                 return Ok("Link deleted succesfully!");
@@ -167,25 +162,23 @@ namespace WebPortfolioCoreApi.Controllers
             }
             finally
             {
-                context.Dispose();
+                _context.Dispose();
             }
         }
 
         // Delete all links
-        static public bool DeleteAllLinks(int id)
+        public bool DeleteAllLinks(int id)
         {
-            WebPortfolioContext context = new WebPortfolioContext();
-
             try
             {
                 // Searching right link with ID
-                var link = context.SocialMediaLinks.Find(id);
+                var link = _context.SocialMediaLinks.Find(id);
 
                 // Deletion from the database is performed
                 if (link != null)
                 {
-                    context.Remove(link);
-                    context.SaveChanges();
+                    _context.Remove(link);
+                    _context.SaveChanges();
                 }
 
                 return true;
@@ -193,10 +186,6 @@ namespace WebPortfolioCoreApi.Controllers
             catch
             {
                 return false;
-            }
-            finally
-            {
-                context.Dispose();
             }
         }
     }

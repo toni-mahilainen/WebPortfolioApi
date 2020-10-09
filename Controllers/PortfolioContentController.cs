@@ -17,17 +17,22 @@ namespace WebPortfolioCoreApi.Controllers
     [ApiController]
     public class PortfolioContentController : ControllerBase
     {
+        public WebPortfolioContext _context;
+
+        public PortfolioContentController(WebPortfolioContext context)
+        {
+            _context = context;
+        }
+
         // GET: api/portfoliocontent/content/{userId}
         // Get all portfolio basic content
         [HttpGet]
         [Route("content/{id}")]
         public ActionResult GetContent(int id)
         {
-            WebPortfolioContext context = new WebPortfolioContext();
-
             try
             {
-                var content = (from pc in context.PortfolioContent
+                var content = (from pc in _context.PortfolioContent
                                where pc.UserId == id
                                select new
                                {
@@ -52,7 +57,7 @@ namespace WebPortfolioCoreApi.Controllers
             }
             finally
             {
-                context.Dispose();
+                _context.Dispose();
             }
         }
 
@@ -62,11 +67,9 @@ namespace WebPortfolioCoreApi.Controllers
         [Route("emails/{id}")]
         public ActionResult GetEmails(int id)
         {
-            WebPortfolioContext context = new WebPortfolioContext();
-
             try
             {
-                var emails = (from e in context.Emails
+                var emails = (from e in _context.Emails
                               where e.UserId == id
                               select new
                               {
@@ -82,7 +85,7 @@ namespace WebPortfolioCoreApi.Controllers
             }
             finally
             {
-                context.Dispose();
+                _context.Dispose();
             }
         }
 
@@ -92,8 +95,6 @@ namespace WebPortfolioCoreApi.Controllers
         [Route("content/{id}")]
         public ActionResult AddContent(int id, [FromBody] PortfolioContent newContent)
         {
-            WebPortfolioContext context = new WebPortfolioContext();
-
             try
             {
                 // Adding content to database (except emails)
@@ -113,8 +114,8 @@ namespace WebPortfolioCoreApi.Controllers
                     LanguageSkills = newContent.LanguageSkills
                 };
 
-                context.PortfolioContent.Add(newPortfolio);
-                context.SaveChanges();
+                _context.PortfolioContent.Add(newPortfolio);
+                _context.SaveChanges();
 
                 return Ok("New content has saved!");
             }
@@ -124,18 +125,16 @@ namespace WebPortfolioCoreApi.Controllers
             }
             finally
             {
-                context.Dispose();
+                _context.Dispose();
             }
         }
 
         // Add default portfolio content to new user
-        static public bool AddDefaultContent(string username)
+        public bool AddDefaultContent(string username)
         {
-            WebPortfolioContext context = new WebPortfolioContext();
-
             try
             {
-                int userId = (from u in context.Users
+                int userId = (from u in _context.Users
                               where u.Username == username
                               select u.UserId).FirstOrDefault();
 
@@ -156,8 +155,8 @@ namespace WebPortfolioCoreApi.Controllers
                     LanguageSkills = ""
                 };
 
-                context.PortfolioContent.Add(newPortfolio);
-                context.SaveChanges();
+                _context.PortfolioContent.Add(newPortfolio);
+                _context.SaveChanges();
 
                 return true;
             }
@@ -167,18 +166,16 @@ namespace WebPortfolioCoreApi.Controllers
             }
             finally
             {
-                context.Dispose();
+                _context.Dispose();
             }
         }
 
         // Add default email addresses to the new user
-        static public bool AddDefaultEmails(string username)
+        public bool AddDefaultEmails(string username)
         {
-            WebPortfolioContext context = new WebPortfolioContext();
-
             try
             {
-                int userId = (from u in context.Users
+                int userId = (from u in _context.Users
                               where u.Username == username
                               select u.UserId).FirstOrDefault();
 
@@ -189,8 +186,8 @@ namespace WebPortfolioCoreApi.Controllers
                         UserId = userId,
                         EmailAddress = ""
                     };
-                    context.Emails.Add(emails);
-                    context.SaveChanges();
+                    _context.Emails.Add(emails);
+                    _context.SaveChanges();
                 }
 
                 return true;
@@ -201,7 +198,7 @@ namespace WebPortfolioCoreApi.Controllers
             }
             finally
             {
-                context.Dispose();
+                _context.Dispose();
             }
         }
 
@@ -211,8 +208,6 @@ namespace WebPortfolioCoreApi.Controllers
         [Route("emails/{id}")]
         public ActionResult AddEmails(int id, [FromBody] JsonElement jsonElement)
         {
-            WebPortfolioContext context = new WebPortfolioContext();
-            
             try
             {
                 // Adding emails to database
@@ -230,8 +225,8 @@ namespace WebPortfolioCoreApi.Controllers
                         UserId = id,
                         EmailAddress = emailsArray[i]["EmailAddress"].ToString()
                     };
-                    context.Emails.Add(emails);
-                    context.SaveChanges();
+                    _context.Emails.Add(emails);
+                    _context.SaveChanges();
                 }
 
                 return Ok("Emails has saved!");
@@ -242,7 +237,7 @@ namespace WebPortfolioCoreApi.Controllers
             }
             finally
             {
-                context.Dispose();
+                _context.Dispose();
             }
         }
 
@@ -252,10 +247,8 @@ namespace WebPortfolioCoreApi.Controllers
         [Route("content/{id}")]
         public ActionResult UpdateContent(int id, [FromBody] PortfolioContent newContent)
         {
-            WebPortfolioContext context = new WebPortfolioContext();
-
             // Searching right portfolio with ID
-            PortfolioContent portfolio = (from pc in context.PortfolioContent
+            PortfolioContent portfolio = (from pc in _context.PortfolioContent
                                           where pc.UserId == id
                                           select pc).FirstOrDefault();
             try
@@ -273,7 +266,7 @@ namespace WebPortfolioCoreApi.Controllers
                     portfolio.Education = newContent.Education;
                     portfolio.WorkHistory = newContent.WorkHistory;
                     portfolio.LanguageSkills = newContent.LanguageSkills;
-                    context.SaveChanges();
+                    _context.SaveChanges();
 
                     return Ok("Portfolio updated succesfully!");
                 }
@@ -288,7 +281,7 @@ namespace WebPortfolioCoreApi.Controllers
             }
             finally
             {
-                context.Dispose();
+                _context.Dispose();
             }
         }
 
@@ -298,8 +291,6 @@ namespace WebPortfolioCoreApi.Controllers
         [Route("emails")]
         public ActionResult UpdateEmails([FromBody] JsonElement jsonElement)
         {
-            WebPortfolioContext context = new WebPortfolioContext();
-
             // Updates emails to database
             // Converts emails json element to string
             string json = System.Text.Json.JsonSerializer.Serialize(jsonElement);
@@ -314,12 +305,12 @@ namespace WebPortfolioCoreApi.Controllers
                 {
                     int emailId = int.Parse(emailsArray[i]["EmailId"].ToString());
 
-                    Emails oldEmail = (from e in context.Emails
+                    Emails oldEmail = (from e in _context.Emails
                                        where e.EmailId == emailId
                                        select e).FirstOrDefault();
 
                     oldEmail.EmailAddress = emailsArray[i]["EmailAddress"].ToString();
-                    context.SaveChanges();
+                    _context.SaveChanges();
                 }
 
                 return Ok("Emails updated succesfully!");
@@ -330,15 +321,13 @@ namespace WebPortfolioCoreApi.Controllers
             }
             finally
             {
-                context.Dispose();
+                _context.Dispose();
             }
         }
 
         // Delete users portfolio and all content
-        static public bool DeletePortfolio(int id)
+        public bool DeletePortfolio(int id)
         {
-            WebPortfolioContext context = new WebPortfolioContext();
-
             try
             {
                 if (id != 0)
@@ -350,7 +339,7 @@ namespace WebPortfolioCoreApi.Controllers
                     bool skillBool = false;
 
                     // Searching right emails with user ID
-                    var emailIdArray = (from e in context.Emails
+                    var emailIdArray = (from e in _context.Emails
                                         where e.UserId == id
                                         select e.EmailId).ToArray();
 
@@ -360,10 +349,10 @@ namespace WebPortfolioCoreApi.Controllers
                     {
                         for (int i = 0; i < emailIdArray.Length; i++)
                         {
-                            Emails email = context.Emails.Find(emailIdArray[i]);
+                            Emails email = _context.Emails.Find(emailIdArray[i]);
 
-                            context.Remove(email);
-                            context.SaveChanges();
+                            _context.Remove(email);
+                            _context.SaveChanges();
                         }
 
                         mailBool = true;
@@ -374,7 +363,7 @@ namespace WebPortfolioCoreApi.Controllers
                     }
 
                     // Searching right questbook messages with user ID
-                    var messageIdArray = (from qm in context.QuestbookMessages
+                    var messageIdArray = (from qm in _context.QuestbookMessages
                                           where qm.UserId == id
                                           select qm.MessageId).ToArray();
 
@@ -386,7 +375,9 @@ namespace WebPortfolioCoreApi.Controllers
                         {
                             int messageId = messageIdArray[i];
 
-                            messageBool = QuestbookController.DeleteAllMessages(messageId);
+                            QuestbookController controller = new QuestbookController(_context);
+
+                            messageBool = controller.DeleteAllMessages(messageId);
 
                             if (messageBool)
                             {
@@ -400,7 +391,7 @@ namespace WebPortfolioCoreApi.Controllers
                     }
 
                     // Searching images with user ID
-                    var imageIdArray = (from iu in context.ImageUrls
+                    var imageIdArray = (from iu in _context.ImageUrls
                                         where iu.UserId == id
                                         select iu.UrlId).ToArray();
 
@@ -412,7 +403,9 @@ namespace WebPortfolioCoreApi.Controllers
                         {
                             int urlId = imageIdArray[i];
 
-                            imageBool = ImagesController.DeleteAllImages(urlId);
+                            ImagesController controller = new ImagesController(_context);
+
+                            imageBool = controller.DeleteAllImages(urlId);
 
                             if (imageBool)
                             {
@@ -426,7 +419,7 @@ namespace WebPortfolioCoreApi.Controllers
                     }
 
                     // Searching social media links with user ID
-                    var linkIdArray = (from sml in context.SocialMediaLinks
+                    var linkIdArray = (from sml in _context.SocialMediaLinks
                                        where sml.UserId == id
                                        select sml.LinkId).ToArray();
 
@@ -438,7 +431,9 @@ namespace WebPortfolioCoreApi.Controllers
                         {
                             int linkId = linkIdArray[i];
 
-                            linkBool = SocialMediaController.DeleteAllLinks(linkId);
+                            SocialMediaController controller = new SocialMediaController(_context);
+
+                            linkBool = controller.DeleteAllLinks(linkId);
 
                             if (linkBool)
                             {
@@ -452,7 +447,7 @@ namespace WebPortfolioCoreApi.Controllers
                     }
 
                     // Searching social media links with portfolio ID
-                    var skillIdArray = (from s in context.Skills
+                    var skillIdArray = (from s in _context.Skills
                                         where s.UserId == id
                                         select s.SkillId).ToArray();
 
@@ -464,7 +459,9 @@ namespace WebPortfolioCoreApi.Controllers
                         {
                             int skillId = skillIdArray[i];
 
-                            skillBool = SkillsController.DeleteAllSkillAndProjects(skillId);
+                            SkillsController controller = new SkillsController(_context);
+
+                            skillBool = controller.DeleteAllSkillAndProjects(skillId);
 
                             if (skillBool)
                             {
@@ -478,17 +475,17 @@ namespace WebPortfolioCoreApi.Controllers
                     }
 
                     // Searching right portfolio with user ID
-                    int portfolioId = (from pc in context.PortfolioContent
+                    int portfolioId = (from pc in _context.PortfolioContent
                                        where pc.UserId == id
                                        select pc.PortfolioId).FirstOrDefault();
 
                     // At the end, search the right portfolio and remove it
                     if ((mailBool = true) && (messageBool = true) && (imageBool = true) && (linkBool = true) && (skillBool = true))
                     {
-                        PortfolioContent portfolio = context.PortfolioContent.Find(portfolioId);
+                        PortfolioContent portfolio = _context.PortfolioContent.Find(portfolioId);
 
-                        context.Remove(portfolio);
-                        context.SaveChanges();
+                        _context.Remove(portfolio);
+                        _context.SaveChanges();
                     }
                     else
                     {
@@ -504,7 +501,7 @@ namespace WebPortfolioCoreApi.Controllers
             }
             finally
             {
-                context.Dispose();
+                _context.Dispose();
             }
         }
     }

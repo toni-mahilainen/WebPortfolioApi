@@ -15,17 +15,22 @@ namespace WebPortfolioCoreApi.Controllers
     [ApiController]
     public class ProjectsController : ControllerBase
     {
+        public WebPortfolioContext _context;
+
+        public ProjectsController(WebPortfolioContext context)
+        {
+            _context = context;
+        }
+
         // GET: api/projects/{skillId}
         // Get all users projects for specific skill
         [HttpGet]
         [Route("{id}")]
         public ActionResult GetProjects(int id)
         {
-            WebPortfolioContext context = new WebPortfolioContext();
-
             try
             {
-                var projects = (from p in context.Projects
+                var projects = (from p in _context.Projects
                                 where p.SkillId == id
                                 select new
                                 {
@@ -43,7 +48,7 @@ namespace WebPortfolioCoreApi.Controllers
             }
             finally
             {
-                context.Dispose();
+                _context.Dispose();
             }
         }
 
@@ -53,8 +58,6 @@ namespace WebPortfolioCoreApi.Controllers
         [Route("{id}")]
         public ActionResult AddOrUpdateProjects(int id, [FromBody] JsonElement jsonElement)
         {
-            WebPortfolioContext context = new WebPortfolioContext();
-
             // Converts json element to string
             string json = System.Text.Json.JsonSerializer.Serialize(jsonElement);
 
@@ -82,8 +85,8 @@ namespace WebPortfolioCoreApi.Controllers
                             Description = projectsArray[a]["Description"].ToString()
                         };
 
-                        context.Projects.Add(project);
-                        context.SaveChanges();
+                        _context.Projects.Add(project);
+                        _context.SaveChanges();
                     }
                     else
                     {
@@ -110,36 +113,30 @@ namespace WebPortfolioCoreApi.Controllers
             }
             finally
             {
-                context.Dispose();
+                _context.Dispose();
             }
         }
 
         // Update users single project for specific skill
-        static public bool UpdateProject(int id, Projects newProject)
+        public bool UpdateProject(int id, Projects newProject)
         {
-            WebPortfolioContext context = new WebPortfolioContext();
-
             try
             {
                 // Get a project that needs to update and new data is placed to database
-                Projects oldProject = (from p in context.Projects
+                Projects oldProject = (from p in _context.Projects
                                        where p.ProjectId == id
                                        select p).FirstOrDefault();
 
                 oldProject.Name = newProject.Name;
                 oldProject.Link = newProject.Link;
                 oldProject.Description = newProject.Description;
-                context.SaveChanges();
+                _context.SaveChanges();
 
                 return true;
             }
             catch
             {
                 return false;
-            }
-            finally
-            {
-                context.Dispose();
             }
         }
 
@@ -149,16 +146,14 @@ namespace WebPortfolioCoreApi.Controllers
         [Route("{id}")]
         public ActionResult DeleteProject(int id)
         {
-            WebPortfolioContext context = new WebPortfolioContext();
-
             try
             {
-                var project = context.Projects.Find(id);
+                var project = _context.Projects.Find(id);
 
                 if (project != null)
                 {
-                    context.Remove(project);
-                    context.SaveChanges();
+                    _context.Remove(project);
+                    _context.SaveChanges();
                 }
 
                 return Ok("Project deleted succesfully!");
@@ -169,7 +164,7 @@ namespace WebPortfolioCoreApi.Controllers
             }
             finally
             {
-                context.Dispose();
+                _context.Dispose();
             }
         }
     }
