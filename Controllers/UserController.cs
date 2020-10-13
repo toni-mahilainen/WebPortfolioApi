@@ -378,16 +378,19 @@ namespace WebPortfolioCoreApi.Controllers
             }
         }
 
+        // Development
+        //private static readonly string connectionString = string.Format("DefaultEndpointsProtocol=https;AccountName=webportfolio;AccountKey={0}", Secrets.AzureAccessKey);
+        
+        // Published
+        private static readonly string connectionString = Environment.GetEnvironmentVariable("CUSTOMCONNSTR_BlobStorage");
+
         // GET: api/user/sas/
         // Get a SAS token for public portfolio
         [HttpGet]
         [Route("sas")]
         public ActionResult GetSasForPublicPortfolio()
         {
-            // Account name and access key
-            var storageAccountName = "webportfolio";
-
-            var connectionString = string.Format("DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1}", storageAccountName, Secrets.AzureAccessKey);
+            // Storage account
             var storageAccount = CloudStorageAccount.Parse(connectionString);
 
             // Generate a SAS token for the user's container/object to Webportfolio's Storage Account
@@ -412,10 +415,7 @@ namespace WebPortfolioCoreApi.Controllers
                                where u.Username == username
                                select u).FirstOrDefault();
 
-            // Account name and access key
-            var storageAccountName = "webportfolio";
-
-            var connectionString = string.Format("DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1}", storageAccountName, Secrets.AzureAccessKey);
+            // Storage account
             var storageAccount = CloudStorageAccount.Parse(connectionString);
 
             // Generate a SAS token for the user's container/object to Webportfolio's Storage Account
@@ -460,8 +460,13 @@ namespace WebPortfolioCoreApi.Controllers
                 {
                     MailMessage mail = new MailMessage();
                     SmtpClient client = new SmtpClient("whm34.louhi.net");
+                    string sendingEmail = Environment.GetEnvironmentVariable("SendingEmail");
 
-                    mail.From = new MailAddress(Secrets.SendingEmail);
+                    // Development
+                    //mail.From = new MailAddress(Secrets.SendingEmail);
+
+                    // Published
+                    mail.From = new MailAddress(sendingEmail);
                     mail.To.Add(email);
                     mail.Subject = "Web Portfolio password reset";
                     mail.IsBodyHtml = true;
@@ -474,11 +479,15 @@ namespace WebPortfolioCoreApi.Controllers
 
                     string token = Convert.ToBase64String(bytes);
 
-                    string link = "http://localhost:3000/resetpassword/" + token;
+                    // Development
+                    //string link = "http://localhost:3000/resetpassword/" + token;
+
+                    // Published
+                    string link = "https://webportfolio.fi/resetpassword/" + token;
                     mail.Body = "<h3>Click the link below to reset your password</h3><br/><a href=" + link + ">" + link + "</a>";
 
                     client.Port = 587;
-                    client.Credentials = new NetworkCredential(Secrets.SendingEmail, Secrets.EmailPassword);
+                    client.Credentials = new NetworkCredential(sendingEmail, Environment.GetEnvironmentVariable("EmailPassword"));
                     client.EnableSsl = true;
 
                     client.Send(mail);

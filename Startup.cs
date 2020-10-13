@@ -38,7 +38,7 @@ namespace WebPortfolioCoreApi
 
             services.AddDbContext<WebPortfolioContext>(options =>
             {
-                options.UseSqlServer(Configuration.GetConnectionString("WebPortdolioDatabase"));
+                options.UseSqlServer(Environment.GetEnvironmentVariable("SQLAZURECONNSTR_SQLAzure"));
             }, ServiceLifetime.Transient);
 
             services.AddMvc(options => options.EnableEndpointRouting = false);

@@ -164,10 +164,6 @@ namespace WebPortfolioCoreApi.Controllers
             {
                 return false;
             }
-            finally
-            {
-                _context.Dispose();
-            }
         }
 
         // Add default email addresses to the new user
@@ -195,10 +191,6 @@ namespace WebPortfolioCoreApi.Controllers
             catch (Exception)
             {
                 return false;
-            }
-            finally
-            {
-                _context.Dispose();
             }
         }
 
@@ -498,10 +490,6 @@ namespace WebPortfolioCoreApi.Controllers
             catch
             {
                 return false;
-            }
-            finally
-            {
-                _context.Dispose();
             }
         }
     }
