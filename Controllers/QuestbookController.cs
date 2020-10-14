@@ -188,11 +188,25 @@ namespace WebPortfolioCoreApi.Controllers
 
                 var visitor = _context.Visitors.Find(visitorId);
 
+                // The count of messages for visitor
+                int messageCount = (from q in _context.QuestbookMessages
+                                    where q.VisitorId == visitorId
+                                    select q).ToArray().Length;
+
                 // Deletion from the database is performed
                 if (message != null && visitor != null)
                 {
-                    _context.Remove(message);
-                    _context.Remove(visitor);
+                    // If the visitor has multiple messages, only the message will be deleted
+                    if (messageCount > 1)
+                    {
+                        _context.Remove(message);
+                    }
+                    else
+                    {
+                        _context.Remove(message);
+                        _context.Remove(visitor);
+                    }
+
                     _context.SaveChanges();
                 }
 

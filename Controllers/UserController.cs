@@ -483,7 +483,7 @@ namespace WebPortfolioCoreApi.Controllers
                     //string link = "http://localhost:3000/resetpassword/" + token;
 
                     // Published
-                    string link = "https://webportfolio.fi/resetpassword/" + token;
+                    string link = "https://dev.webportfolio.fi/resetpassword/" + token;
                     mail.Body = "<h3>Click the link below to reset your password</h3><br/><a href=" + link + ">" + link + "</a>";
 
                     client.Port = 587;
