@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Configuration;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 
@@ -7,6 +6,10 @@ namespace WebPortfolioCoreApi.Models
 {
     public partial class WebPortfolioContext : DbContext
     {
+        public WebPortfolioContext()
+        {
+        }
+
         public WebPortfolioContext(DbContextOptions<WebPortfolioContext> options)
             : base(options)
         {
@@ -22,6 +25,7 @@ namespace WebPortfolioCoreApi.Models
         public virtual DbSet<Skills> Skills { get; set; }
         public virtual DbSet<SocialMediaLinks> SocialMediaLinks { get; set; }
         public virtual DbSet<SocialMediaServices> SocialMediaServices { get; set; }
+        public virtual DbSet<Themes> Themes { get; set; }
         public virtual DbSet<Users> Users { get; set; }
         public virtual DbSet<Visitors> Visitors { get; set; }
 
@@ -238,6 +242,18 @@ namespace WebPortfolioCoreApi.Models
                     .HasMaxLength(50);
             });
 
+            modelBuilder.Entity<Themes>(entity =>
+            {
+                entity.HasKey(e => e.ThemeId);
+
+                entity.Property(e => e.ThemeId).HasColumnName("ThemeID");
+
+                entity.Property(e => e.ThemeName)
+                    .IsRequired()
+                    .HasMaxLength(10)
+                    .IsFixedLength();
+            });
+
             modelBuilder.Entity<Users>(entity =>
             {
                 entity.HasKey(e => e.UserId);
@@ -256,9 +272,16 @@ namespace WebPortfolioCoreApi.Models
 
                 entity.Property(e => e.SasToken).HasMaxLength(200);
 
+                entity.Property(e => e.ThemeId).HasColumnName("ThemeID");
+
                 entity.Property(e => e.Username)
                     .IsRequired()
                     .HasMaxLength(50);
+
+                entity.HasOne(d => d.Theme)
+                    .WithMany(p => p.Users)
+                    .HasForeignKey(d => d.ThemeId)
+                    .HasConstraintName("FK_Users_Themes");
             });
 
             modelBuilder.Entity<Visitors>(entity =>

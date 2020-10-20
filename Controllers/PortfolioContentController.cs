@@ -34,6 +34,8 @@ namespace WebPortfolioCoreApi.Controllers
             {
                 var content = (from pc in _context.PortfolioContent
                                where pc.UserId == id
+                               join u in _context.Users
+                               on pc.UserId equals u.UserId
                                select new
                                {
                                    pc.Firstname,
@@ -47,6 +49,7 @@ namespace WebPortfolioCoreApi.Controllers
                                    pc.Education,
                                    pc.WorkHistory,
                                    pc.LanguageSkills,
+                                   u.ThemeId
                                }).ToList();
 
                 return Ok(content);
@@ -134,14 +137,18 @@ namespace WebPortfolioCoreApi.Controllers
         {
             try
             {
-                int userId = (from u in _context.Users
-                              where u.Username == username
-                              select u.UserId).FirstOrDefault();
+                //int userId = (from u in _context.Users
+                //              where u.Username == username
+                //              select u.UserId).FirstOrDefault();
+
+                var user = (from u in _context.Users
+                            where u.Username == username
+                            select u).FirstOrDefault();
 
                 // Adding default content to database
                 PortfolioContent newPortfolio = new PortfolioContent
                 {
-                    UserId = userId,
+                    UserId = user.UserId,
                     Firstname = "",
                     Lastname = "",
                     Birthdate = new DateTime(1900, 01, 01),
@@ -154,6 +161,8 @@ namespace WebPortfolioCoreApi.Controllers
                     WorkHistory = "",
                     LanguageSkills = ""
                 };
+
+                user.ThemeId = 1;
 
                 _context.PortfolioContent.Add(newPortfolio);
                 _context.SaveChanges();

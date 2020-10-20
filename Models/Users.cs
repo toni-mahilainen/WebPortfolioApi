@@ -21,7 +21,9 @@ namespace WebPortfolioCoreApi.Models
         public string JwtToken { get; set; }
         public string SasToken { get; set; }
         public string PasswordResetToken { get; set; }
+        public int? ThemeId { get; set; }
 
+        public virtual Themes Theme { get; set; }
         public virtual ICollection<Emails> Emails { get; set; }
         public virtual ICollection<ImageUrls> ImageUrls { get; set; }
         public virtual ICollection<PortfolioContent> PortfolioContent { get; set; }

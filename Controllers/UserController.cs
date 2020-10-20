@@ -189,7 +189,7 @@ namespace WebPortfolioCoreApi.Controllers
         // Create a new user
         [HttpPost]
         [Route("create")]
-        public ActionResult AddNewUserAsync([FromBody] Users newUser)
+        public ActionResult AddNewUser([FromBody] Users newUser)
         {
             try
             {
@@ -344,6 +344,32 @@ namespace WebPortfolioCoreApi.Controllers
             }
         }
 
+        // PUT: api/user/{userId}/{newThemeId}
+        // Change users password
+        [HttpPut]
+        [Route("{userId}/{newThemeId}")]
+        public ActionResult ChangeTheme(int userId, int newThemeId)
+        {
+            // Searching right user with ID
+            var user = _context.Users.Find(userId);
+
+            try
+            {
+                user.ThemeId = newThemeId;
+                _context.SaveChanges();
+
+                return Ok("Theme has changed succesfully!");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest("Problem detected while changing the theme for user's portfolio. Error message: " + ex.Message);
+            }
+            finally
+            {
+                _context.Dispose();
+            }
+        }
+
         // DELETE: api/user/{userId}
         // Delete an account
         [HttpDelete]
@@ -380,7 +406,7 @@ namespace WebPortfolioCoreApi.Controllers
 
         // Development
         //private static readonly string connectionString = string.Format("DefaultEndpointsProtocol=https;AccountName=webportfolio;AccountKey={0}", Secrets.AzureAccessKey);
-        
+
         // Published
         private static readonly string connectionString = Environment.GetEnvironmentVariable("CUSTOMCONNSTR_BlobStorage");
 
@@ -430,7 +456,7 @@ namespace WebPortfolioCoreApi.Controllers
                 Services = SharedAccessAccountServices.Blob,
                 ResourceTypes = SharedAccessAccountResourceTypes.Object | SharedAccessAccountResourceTypes.Container,
                 SharedAccessStartTime = DateTime.UtcNow.AddHours(-1),
-                SharedAccessExpiryTime = DateTime.UtcNow.AddHours(8),
+                SharedAccessExpiryTime = DateTime.UtcNow.AddHours(1),
                 Protocols = SharedAccessProtocol.HttpsOnly,
             };
             string sasToken = storageAccount.GetSharedAccessSignature(policy);
@@ -459,7 +485,7 @@ namespace WebPortfolioCoreApi.Controllers
                 if (user != null)
                 {
                     MailMessage mail = new MailMessage();
-                    SmtpClient client = new SmtpClient("whm34.louhi.net");
+                    SmtpClient client = new SmtpClient("mail.webportfolio.fi");
                     string sendingEmail = Environment.GetEnvironmentVariable("SendingEmail");
 
                     // Development
@@ -483,7 +509,7 @@ namespace WebPortfolioCoreApi.Controllers
                     //string link = "http://localhost:3000/resetpassword/" + token;
 
                     // Published
-                    string link = "https://dev.webportfolio.fi/resetpassword/" + token;
+                    string link = "https://www.webportfolio.fi/resetpassword/" + token;
                     mail.Body = "<h3>Click the link below to reset your password</h3><br/><a href=" + link + ">" + link + "</a>";
 
                     client.Port = 587;
