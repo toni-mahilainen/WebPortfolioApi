@@ -15,17 +15,22 @@ namespace WebPortfolioCoreApi.Controllers
     [ApiController]
     public class ImagesController : ControllerBase
     {
+        public WebPortfolioContext _context;
+
+        public ImagesController(WebPortfolioContext context)
+        {
+            _context = context;
+        }
+
         // GET: api/images/{userId}
         // Get all users image url´s 
         [HttpGet]
         [Route("{id}")]
         public ActionResult GetImages(int id)
         {
-            WebPortfolioContext context = new WebPortfolioContext();
-
             try
             {
-                var images = (from i in context.ImageUrls
+                var images = (from i in _context.ImageUrls
                               where i.UserId == id
                               select new
                               {
@@ -41,7 +46,7 @@ namespace WebPortfolioCoreApi.Controllers
             }
             finally
             {
-                context.Dispose();
+                _context.Dispose();
             }
         }
 
@@ -51,8 +56,6 @@ namespace WebPortfolioCoreApi.Controllers
         [Route("{id}")]
         public ActionResult AddImages(int id, [FromBody] JsonElement jsonElement)
         {
-            WebPortfolioContext context = new WebPortfolioContext();
-
             // Converts json element to string
             string json = System.Text.Json.JsonSerializer.Serialize(jsonElement);
 
@@ -72,20 +75,36 @@ namespace WebPortfolioCoreApi.Controllers
                         int typeId = int.Parse(row["TypeID"].ToString());
                         string url = row["Url"].ToString();
 
-                        // Adds image urls to database
-                        ImageUrls newImage = new ImageUrls
-                        {
-                            UserId = id,
-                            TypeId = typeId,
-                            Url = url
-                        };
+                        ImageUrls oldImage = (from iu in _context.ImageUrls
+                                              where iu.UserId == id && iu.TypeId == typeId
+                                              select iu).FirstOrDefault();
 
-                        context.ImageUrls.Add(newImage);
-                        context.SaveChanges();
+                        if (oldImage != null)
+                        {
+                            // If image url has changed, it will be updated to database
+                            if (url != oldImage.Url)
+                            {
+                                oldImage.Url = url;
+                                _context.SaveChanges();
+                            }
+                        }
+                        else
+                        {
+                            // Adds image urls to database
+                            ImageUrls newImage = new ImageUrls
+                            {
+                                UserId = id,
+                                TypeId = typeId,
+                                Url = url
+                            };
+
+                            _context.ImageUrls.Add(newImage);
+                            _context.SaveChanges();
+                        }
                     }
                 }
 
-                return Ok("Images has added succesfully!");
+                return Ok("The Image has added/updated succesfully!");
             }
             catch (Exception ex)
             {
@@ -93,7 +112,7 @@ namespace WebPortfolioCoreApi.Controllers
             }
             finally
             {
-                context.Dispose();
+                _context.Dispose();
             }
         }
 
@@ -103,8 +122,6 @@ namespace WebPortfolioCoreApi.Controllers
         [Route("{id}")]
         public ActionResult UpdateImages(int id, [FromBody] JsonElement jsonElement)
         {
-            WebPortfolioContext context = new WebPortfolioContext();
-
             // Converts json element to string
             string json = System.Text.Json.JsonSerializer.Serialize(jsonElement);
 
@@ -124,7 +141,7 @@ namespace WebPortfolioCoreApi.Controllers
                         int typeId = int.Parse(row["TypeID"].ToString());
                         string newUrl = row["Url"].ToString();
 
-                        ImageUrls oldImage = (from iu in context.ImageUrls
+                        ImageUrls oldImage = (from iu in _context.ImageUrls
                                               where iu.UserId == id && iu.TypeId == typeId
                                               select iu).FirstOrDefault();
 
@@ -132,11 +149,11 @@ namespace WebPortfolioCoreApi.Controllers
                         if (newUrl != oldImage.Url)
                         {
                             oldImage.Url = newUrl;
-                            context.SaveChanges();
+                            _context.SaveChanges();
                         }
                     }
 
-                    return Ok("Images updated succesfully!");
+                    return Ok("Image has updated succesfully!");
                 }
                 else
                 {
@@ -149,25 +166,23 @@ namespace WebPortfolioCoreApi.Controllers
             }
             finally
             {
-                context.Dispose();
+                _context.Dispose();
             }
         }
 
         // Delete all message
-        static public bool DeleteAllImages(int id)
+        public bool DeleteAllImages(int id)
         {
-            WebPortfolioContext context = new WebPortfolioContext();
-
             try
             {
                 // Searching right message with ID
-                var image = context.ImageUrls.Find(id);
+                var image = _context.ImageUrls.Find(id);
 
                 // Deletion from the database is performed
                 if (image != null)
                 {
-                    context.Remove(image);
-                    context.SaveChanges();
+                    _context.Remove(image);
+                    _context.SaveChanges();
                 }
 
                 return true;
@@ -175,10 +190,6 @@ namespace WebPortfolioCoreApi.Controllers
             catch
             {
                 return false;
-            }
-            finally
-            {
-                context.Dispose();
             }
         }
     }

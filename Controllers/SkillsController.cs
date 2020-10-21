@@ -15,17 +15,22 @@ namespace WebPortfolioCoreApi.Controllers
     [ApiController]
     public class SkillsController : ControllerBase
     {
+        public WebPortfolioContext _context;
+
+        public SkillsController(WebPortfolioContext context)
+        {
+            _context = context;
+        }
+
         // GET: api/skills/{userId}
         // Get all users skills
         [HttpGet]
         [Route("{id}")]
         public ActionResult GetSkills(int id)
         {
-            WebPortfolioContext context = new WebPortfolioContext();
-
             try
             {
-                var skills = (from s in context.Skills
+                var skills = (from s in _context.Skills
                               where s.UserId == id
                               select new
                               {
@@ -42,18 +47,16 @@ namespace WebPortfolioCoreApi.Controllers
             }
             finally
             {
-                context.Dispose();
+                _context.Dispose();
             }
         }
 
         // POST: api/skills/{userId}
-        // Add/updates users skills/projects to database
+        // Add/update users skills to database
         [HttpPost]
         [Route("{id}")]
-        public ActionResult AddOrUpdateSkillsAndProjects(int id, [FromBody] JsonElement jsonElement)
+        public ActionResult AddOrUpdateSkills(int id, [FromBody] JsonElement jsonElement)
         {
-            WebPortfolioContext context = new WebPortfolioContext();
-
             // Converts json element to string
             string json = System.Text.Json.JsonSerializer.Serialize(jsonElement);
 
@@ -69,9 +72,8 @@ namespace WebPortfolioCoreApi.Controllers
                 // Adds as many skills as the count of an array indicates
                 for (int i = 0; i < skillArrayCount; i++)
                 {
-                    int lastAddedSkillId = 0;
                     int skillId = int.Parse(skillsArray[i]["SkillId"].ToString());
-                    // If skill is new (skillId == 0), a create is made to database. Otherwise an update
+                    // If skill is new (skillId == 0), creation is made to database. Otherwise an update
                     if (skillId == 0)
                     {
                         // Adds new skill to database
@@ -82,14 +84,8 @@ namespace WebPortfolioCoreApi.Controllers
                             SkillLevel = int.Parse(skillsArray[i]["SkillLevel"].ToString())
                         };
 
-                        context.Skills.Add(skill);
-                        context.SaveChanges();
-
-                        // Get last added skill ID for specific user
-                        lastAddedSkillId = (from s in context.Skills
-                                            where s.UserId == id
-                                            orderby s.SkillId ascending
-                                            select s.SkillId).Last();
+                        _context.Skills.Add(skill);
+                        _context.SaveChanges();
                     }
                     else
                     {
@@ -105,58 +101,9 @@ namespace WebPortfolioCoreApi.Controllers
                             return BadRequest("Problem detected while updating the skill for user " + id + ".");
                         }
                     }
-
-                    // Converts nested "Projects" JSON object to an array and save count of an array to variable
-                    var projectsArray = obj["Skills"][i]["Projects"].ToArray();
-                    int projectArrayCount = projectsArray.Count();
-
-                    // Adds as many projects as the count of an array indicates
-                    for (int a = 0; a < projectArrayCount; a++)
-                    {
-                        int projectId = int.Parse(projectsArray[a]["ProjectId"].ToString());
-                        // If projects is new (projectId == 0), a create is made to database. Otherwise an update
-                        if (projectId == 0)
-                        {
-                            Projects project = new Projects();
-
-                            // if the skill that was added was already exists, skill ID comes from variable "skillId"
-                            if (lastAddedSkillId == 0)
-                            {
-                                project.SkillId = skillId;
-                                project.Name = projectsArray[a]["Name"].ToString();
-                                project.Link = projectsArray[a]["Link"].ToString();
-                                project.Description = projectsArray[a]["Description"].ToString();
-                            }
-                            else
-                            {
-                                project.SkillId = lastAddedSkillId;
-                                project.Name = projectsArray[a]["Name"].ToString();
-                                project.Link = projectsArray[a]["Link"].ToString();
-                                project.Description = projectsArray[a]["Description"].ToString();
-                            }
-
-                            context.Projects.Add(project);
-                            context.SaveChanges();
-                        }
-                        else
-                        {
-                            // Updates the project
-                            Projects project = new Projects
-                            {
-                                Name = projectsArray[a]["Name"].ToString(),
-                                Link = projectsArray[a]["Link"].ToString(),
-                                Description = projectsArray[a]["Description"].ToString()
-                            };
-
-                            if (!ProjectsController.UpdateProject(projectId, project))
-                            {
-                                return BadRequest("Problem detected while updating project for skill " + lastAddedSkillId + ".");
-                            }
-                        }
-                    }
                 }
 
-                return Ok("Skills/projects has saved!");
+                return Ok("Skills has saved!");
             }
             catch (Exception ex)
             {
@@ -164,34 +111,28 @@ namespace WebPortfolioCoreApi.Controllers
             }
             finally
             {
-                context.Dispose();
+                _context.Dispose();
             }
         }
 
         // Update users skills
-        static public bool UpdateSkill(int id, Skills newSkill)
+        public bool UpdateSkill(int id, Skills newSkill)
         {
-            WebPortfolioContext context = new WebPortfolioContext();
-
             try
             {
-                Skills oldSkill = (from s in context.Skills
+                Skills oldSkill = (from s in _context.Skills
                                    where s.SkillId == id
                                    select s).FirstOrDefault();
 
                 oldSkill.Skill = newSkill.Skill;
                 oldSkill.SkillLevel = newSkill.SkillLevel;
-                context.SaveChanges();
+                _context.SaveChanges();
 
                 return true;
             }
             catch
             {
                 return false;
-            }
-            finally
-            {
-                context.Dispose();
             }
         }
 
@@ -201,8 +142,6 @@ namespace WebPortfolioCoreApi.Controllers
         [Route("{id}")]
         public ActionResult DeleteSkill(int id)
         {
-            WebPortfolioContext context = new WebPortfolioContext();
-
             try
             {
                 // Removes all projects of the skill
@@ -210,25 +149,25 @@ namespace WebPortfolioCoreApi.Controllers
 
                 do
                 {
-                    project = (from p in context.Projects
+                    project = (from p in _context.Projects
                                where p.SkillId == id
                                select p).FirstOrDefault();
 
                     if (project != null)
                     {
-                        context.Remove(project);
-                        context.SaveChanges();
+                        _context.Remove(project);
+                        _context.SaveChanges();
                     }
 
                 } while (project != null);
 
                 // Removes the skill
-                var skill = context.Skills.Find(id);
+                var skill = _context.Skills.Find(id);
 
                 if (skill != null)
                 {
-                    context.Remove(skill);
-                    context.SaveChanges();
+                    _context.Remove(skill);
+                    _context.SaveChanges();
                 }
 
                 return Ok("Skill deleted succesfully!");
@@ -239,14 +178,12 @@ namespace WebPortfolioCoreApi.Controllers
             }
             finally
             {
-                context.Dispose();
+                _context.Dispose();
             }
         }
 
-        static public bool DeleteAllSkillAndProjects(int id)
+        public bool DeleteAllSkillAndProjects(int id)
         {
-            WebPortfolioContext context = new WebPortfolioContext();
-
             try
             {
                 // Removes all projects of the skill
@@ -254,25 +191,25 @@ namespace WebPortfolioCoreApi.Controllers
 
                 do
                 {
-                    project = (from p in context.Projects
+                    project = (from p in _context.Projects
                                where p.SkillId == id
                                select p).FirstOrDefault();
 
                     if (project != null)
                     {
-                        context.Remove(project);
-                        context.SaveChanges();
+                        _context.Remove(project);
+                        _context.SaveChanges();
                     }
 
                 } while (project != null);
 
                 // Removes the skill
-                var skill = context.Skills.Find(id);
+                var skill = _context.Skills.Find(id);
 
                 if (skill != null)
                 {
-                    context.Remove(skill);
-                    context.SaveChanges();
+                    _context.Remove(skill);
+                    _context.SaveChanges();
                 }
 
                 return true;
@@ -280,10 +217,6 @@ namespace WebPortfolioCoreApi.Controllers
             catch
             {
                 return false;
-            }
-            finally
-            {
-                context.Dispose();
             }
         }
     }

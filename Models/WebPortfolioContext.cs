@@ -25,15 +25,12 @@ namespace WebPortfolioCoreApi.Models
         public virtual DbSet<Skills> Skills { get; set; }
         public virtual DbSet<SocialMediaLinks> SocialMediaLinks { get; set; }
         public virtual DbSet<SocialMediaServices> SocialMediaServices { get; set; }
+        public virtual DbSet<Themes> Themes { get; set; }
         public virtual DbSet<Users> Users { get; set; }
         public virtual DbSet<Visitors> Visitors { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            if (!optionsBuilder.IsConfigured)
-            {
-                optionsBuilder.UseSqlServer("Server=ASUS-LAPTOP\\SQLDEVTONIMA;Initial Catalog=WebPortfolio;Persist Security Info=False;User ID=sa;Password=866462Tm;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;");
-            }
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -245,11 +242,25 @@ namespace WebPortfolioCoreApi.Models
                     .HasMaxLength(50);
             });
 
+            modelBuilder.Entity<Themes>(entity =>
+            {
+                entity.HasKey(e => e.ThemeId);
+
+                entity.Property(e => e.ThemeId).HasColumnName("ThemeID");
+
+                entity.Property(e => e.ThemeName)
+                    .IsRequired()
+                    .HasMaxLength(10)
+                    .IsFixedLength();
+            });
+
             modelBuilder.Entity<Users>(entity =>
             {
                 entity.HasKey(e => e.UserId);
 
                 entity.Property(e => e.UserId).HasColumnName("UserID");
+
+                entity.Property(e => e.JwtToken).HasMaxLength(500);
 
                 entity.Property(e => e.Password)
                     .IsRequired()
@@ -257,14 +268,20 @@ namespace WebPortfolioCoreApi.Models
                     .IsUnicode(false)
                     .IsFixedLength();
 
-                entity.Property(e => e.Token)
-                    .HasMaxLength(199)
-                    .IsUnicode(false)
-                    .IsFixedLength();
+                entity.Property(e => e.PasswordResetToken).HasMaxLength(150);
+
+                entity.Property(e => e.SasToken).HasMaxLength(200);
+
+                entity.Property(e => e.ThemeId).HasColumnName("ThemeID");
 
                 entity.Property(e => e.Username)
                     .IsRequired()
                     .HasMaxLength(50);
+
+                entity.HasOne(d => d.Theme)
+                    .WithMany(p => p.Users)
+                    .HasForeignKey(d => d.ThemeId)
+                    .HasConstraintName("FK_Users_Themes");
             });
 
             modelBuilder.Entity<Visitors>(entity =>
