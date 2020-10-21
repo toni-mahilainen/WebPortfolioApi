@@ -7,6 +7,7 @@ using System.Net.Mail;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Web;
 using Azure.Storage;
@@ -505,12 +506,14 @@ namespace WebPortfolioCoreApi.Controllers
 
                     string token = Convert.ToBase64String(bytes);
 
+                    string newToken = Regex.Replace(token, "/", "!");
+
                     // Development
-                    //string link = "http://localhost:3000/resetpassword/" + token;
+                    //string link = "http://localhost:3000/resetpassword/" + newToken;
 
                     // Published
-                    string link = "https://www.webportfolio.fi/resetpassword/" + token;
-                    mail.Body = "<h3>Click the link below to reset your password</h3><br/><a href=" + link + ">" + link + "</a>";
+                    string link = "https://www.webportfolio.fi/resetpassword/" + newToken;
+                    mail.Body = "<h3>Click the link below to reset your password</h3><br/><a href=" + link + ">Reset your password</a>";
 
                     client.Port = 587;
                     client.Credentials = new NetworkCredential(sendingEmail, Environment.GetEnvironmentVariable("EmailPassword"));
@@ -518,7 +521,7 @@ namespace WebPortfolioCoreApi.Controllers
 
                     client.Send(mail);
 
-                    user.PasswordResetToken = token;
+                    user.PasswordResetToken = newToken;
                     _context.SaveChanges();
 
                     return Ok("Email has sent succesfully!");
