@@ -21,7 +21,7 @@ namespace WebPortfolioCoreApi.Controllers
         }
 
         // GET: api/questbook/{userId}
-        // Get all visitors + messages
+        // Get all the visitors (name + company) and messages
         [HttpGet]
         [Route("{id}")]
         public ActionResult GetAllMessages(int id)
@@ -56,7 +56,7 @@ namespace WebPortfolioCoreApi.Controllers
         }
 
         // POST: api/questbook/{userId}
-        // Add a new message
+        // Add a new message to guestbook
         [HttpPost]
         [Route("{id}")]
         public ActionResult AddNewMessage(int id, [FromBody] NewMessage newMessage)
@@ -122,7 +122,7 @@ namespace WebPortfolioCoreApi.Controllers
         }
 
         // DELETE: api/questbook/{messageId}
-        // Delete the message
+        // Delete the message from questbook
         [HttpDelete]
         [Route("{id}")]
         public ActionResult DeleteMessage(int id)

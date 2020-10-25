@@ -23,7 +23,7 @@ namespace WebPortfolioCoreApi.Controllers
         }
 
         // GET: api/images/{userId}
-        // Get all users image url´s 
+        // Get all the user's URLs for images
         [HttpGet]
         [Route("{id}")]
         public ActionResult GetImages(int id)
@@ -51,7 +51,7 @@ namespace WebPortfolioCoreApi.Controllers
         }
 
         // POST: api/images/{userId}
-        // Add users image url´s to database
+        // Add the user's URLs for images to the database
         [HttpPost]
         [Route("{id}")]
         public ActionResult AddImages(int id, [FromBody] JsonElement jsonElement)
@@ -117,7 +117,7 @@ namespace WebPortfolioCoreApi.Controllers
         }
 
         // PUT: api/images/{userId}
-        // Update users image url´s
+        // Update the user's URLs for images
         [HttpPut]
         [Route("{id}")]
         public ActionResult UpdateImages(int id, [FromBody] JsonElement jsonElement)

@@ -19,7 +19,6 @@ namespace WebPortfolioCoreApi.Controllers
             _context = context;
         }
 
-        // Another comment because first commit
         // GET: api/documentation/
         // Get REST API documentation
         [HttpGet]
@@ -28,7 +27,7 @@ namespace WebPortfolioCoreApi.Controllers
         {
             try
             {
-                // Searching doc
+                // Searching the doc
                 var doc = (from d in _context.Documentation
                            select d).ToList();
 

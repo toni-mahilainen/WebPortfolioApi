@@ -33,83 +33,20 @@ namespace WebPortfolioCoreApi.Controllers
         public Secrets Secrets { get; }
         public WebPortfolioContext _context;
 
+        // Development
+        //private static readonly string connectionString = string.Format("DefaultEndpointsProtocol=https;AccountName=webportfolio;AccountKey={0}", Secrets.AzureAccessKey);
+
+        // Published
+        private static readonly string connectionString = Environment.GetEnvironmentVariable("CUSTOMCONNSTR_BlobStorage");
+
         public UserController(IOptions<Secrets> appkeys, WebPortfolioContext context)
         {
             Secrets = appkeys.Value;
             _context = context;
         }
 
-        // POST: api/user/checklogin
-        // Check the correction of login credentials when signing in
-        [HttpPost]
-        [Route("checklogin")]
-        public ActionResult CheckSignIn([FromBody] Users loginCredentials)
-        {
-            try
-            {
-                var user = (from u in _context.Users
-                            where u.Username == loginCredentials.Username
-                            select u).FirstOrDefault();
-
-                if (user != null)
-                {
-                    if (user.Password == loginCredentials.Password)
-                    {
-                        return Ok("Login succesfull!");
-                    }
-                    else
-                    {
-                        return NotFound("Inccorrect password!");
-                    }
-                }
-                else
-                {
-                    return NotFound("Inccorrect username!");
-                }
-            }
-            catch (Exception ex)
-            {
-                return BadRequest("Problem detected while checking the login credentials. Error message: " + ex.Message);
-            }
-            finally
-            {
-                _context.Dispose();
-            }
-        }
-
-        // POST: api/user/usernamecheck
-        // Check the correction of login credentials when signing in
-        [HttpPost]
-        [Route("usernamecheck/{username}")]
-        public ActionResult IsUsernameInUse(string username)
-        {
-            try
-            {
-                var user = (from u in _context.Users
-                            where u.Username == username
-                            select u).FirstOrDefault();
-
-                if (user == null)
-                {
-                    return Ok("The username '" + username + "' is not in use!");
-                }
-                else
-                {
-                    return NotFound("The username '" + username + "' is already in use!");
-                }
-            }
-            catch (Exception ex)
-            {
-                return BadRequest("Problem detected while checking if the username is already exists. Error message: " + ex.Message);
-            }
-            finally
-            {
-                _context.Dispose();
-            }
-        }
-
-        // GET: api/user/userid
-        // Get user ID for the public portfolio
+        // GET: api/user/userid/{username}
+        // Get the user ID for the public portfolio with username
         [HttpGet]
         [Route("userid/{username}")]
         public ActionResult GetUserId(string username)
@@ -186,6 +123,99 @@ namespace WebPortfolioCoreApi.Controllers
             }
         }
 
+        // GET: api/user/sas/
+        // Get a SAS token for the public portfolio
+        [HttpGet]
+        [Route("sas")]
+        public ActionResult GetSasForPublicPortfolio()
+        {
+            // Storage account
+            var storageAccount = CloudStorageAccount.Parse(connectionString);
+
+            // Generate a SAS token for the user's container/object to Webportfolio's Storage Account
+            SharedAccessAccountPolicy policy = new SharedAccessAccountPolicy()
+            {
+                Permissions = SharedAccessAccountPermissions.Read,
+                Services = SharedAccessAccountServices.Blob,
+                ResourceTypes = SharedAccessAccountResourceTypes.Object,
+                SharedAccessStartTime = DateTime.UtcNow.AddHours(-1),
+                SharedAccessExpiryTime = DateTime.UtcNow.AddHours(1),
+                Protocols = SharedAccessProtocol.HttpsOnly
+            };
+            string sasToken = storageAccount.GetSharedAccessSignature(policy);
+
+            return Ok(sasToken);
+        }
+
+        // POST: api/user/checklogin
+        // Check the correction of login credentials when signing in
+        [HttpPost]
+        [Route("checklogin")]
+        public ActionResult CheckSignIn([FromBody] Users loginCredentials)
+        {
+            try
+            {
+                var user = (from u in _context.Users
+                            where u.Username == loginCredentials.Username
+                            select u).FirstOrDefault();
+
+                if (user != null)
+                {
+                    if (user.Password == loginCredentials.Password)
+                    {
+                        return Ok("Login succesfull!");
+                    }
+                    else
+                    {
+                        return NotFound("Inccorrect password!");
+                    }
+                }
+                else
+                {
+                    return NotFound("Inccorrect username!");
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest("Problem detected while checking the login credentials. Error message: " + ex.Message);
+            }
+            finally
+            {
+                _context.Dispose();
+            }
+        }
+
+        // POST: api/user/usernamecheck
+        // Check if the username is already in use
+        [HttpPost]
+        [Route("usernamecheck/{username}")]
+        public ActionResult IsUsernameInUse(string username)
+        {
+            try
+            {
+                var user = (from u in _context.Users
+                            where u.Username == username
+                            select u).FirstOrDefault();
+
+                if (user == null)
+                {
+                    return Ok("The username '" + username + "' is not in use!");
+                }
+                else
+                {
+                    return NotFound("The username '" + username + "' is already in use!");
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest("Problem detected while checking if the username is already exists. Error message: " + ex.Message);
+            }
+            finally
+            {
+                _context.Dispose();
+            }
+        }
+
         // POST: api/user/create
         // Create a new user
         [HttpPost]
@@ -219,34 +249,11 @@ namespace WebPortfolioCoreApi.Controllers
             }
         }
 
-        // Checks if old password is written correctly
-        public bool CheckPassword(Users user, string password)
-        {
-            string oldPassword = user.Password;
-
-            if (oldPassword == password)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-
-        // Creates a 20 chars long key for token
-        private static Random random = new Random();
-        public static string RandomString(int length)
-        {
-            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789=?!_";
-            return new string(Enumerable.Repeat(chars, length).Select(s => s[random.Next(s.Length)]).ToArray());
-        }
-
-        // POST: api/user/check
-        // Create a new JWT Token for user and send it to database
+        // POST: api/user/createjwt
+        // Create a new JWT Token for the user and send it to the database
         [HttpPost]
-        [Route("check")]
-        public ActionResult CheckLogin([FromBody] Users login)
+        [Route("createjwt")]
+        public ActionResult CreateJwtToken([FromBody] Users login)
         {
             try
             {
@@ -275,7 +282,7 @@ namespace WebPortfolioCoreApi.Controllers
                             new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
                             new Claim(ClaimTypes.Name, user.Username)
                         }),
-                        Expires = DateTime.Now.AddHours(1),
+                        Expires = DateTime.Now.AddHours(3),
                         SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)), SecurityAlgorithms.HmacSha256),
                     };
 
@@ -311,166 +318,8 @@ namespace WebPortfolioCoreApi.Controllers
             }
         }
 
-        // PUT: api/user/{userId}
-        // Change users password
-        [HttpPut]
-        [Route("{id}")]
-        public ActionResult ChangePassword(int id, [FromBody] Passwords passwords)
-        {
-            // Searching right user with ID
-            var user = _context.Users.Find(id);
-
-            // If old password is correct, password will be changed
-            if (CheckPassword(user, passwords.OldPassword))
-            {
-                try
-                {
-                    user.Password = passwords.NewPassword;
-                    _context.SaveChanges();
-
-                    return Ok("Password updated succesfully!");
-                }
-                catch (Exception ex)
-                {
-                    return BadRequest("Problem detected while deleting user. Error message: " + ex.Message);
-                }
-                finally
-                {
-                    _context.Dispose();
-                }
-            }
-            else
-            {
-                return NotFound("Wrong old password.");
-            }
-        }
-
-        // PUT: api/user/{userId}/{newThemeId}
-        // Change users password
-        [HttpPut]
-        [Route("{userId}/{newThemeId}")]
-        public ActionResult ChangeTheme(int userId, int newThemeId)
-        {
-            // Searching right user with ID
-            var user = _context.Users.Find(userId);
-
-            try
-            {
-                user.ThemeId = newThemeId;
-                _context.SaveChanges();
-
-                return Ok("Theme has changed succesfully!");
-            }
-            catch (Exception ex)
-            {
-                return BadRequest("Problem detected while changing the theme for user's portfolio. Error message: " + ex.Message);
-            }
-            finally
-            {
-                _context.Dispose();
-            }
-        }
-
-        // DELETE: api/user/{userId}
-        // Delete an account
-        [HttpDelete]
-        [Route("{id}")]
-        public ActionResult DeleteAccount(int id)
-        {
-            try
-            {
-                if (id != 0)
-                {
-                    PortfolioContentController controller = new PortfolioContentController(_context);
-
-                    if (controller.DeletePortfolio(id))
-                    {
-                        // Searching right user with ID
-                        var user = _context.Users.Find(id);
-
-                        _context.Remove(user);
-                        _context.SaveChanges();
-                    }
-                }
-
-                return Ok("Account and all content has deleted succesfully!");
-            }
-            catch (Exception ex)
-            {
-                return BadRequest("Problem detected while deleting user. Error message: " + ex.InnerException);
-            }
-            finally
-            {
-                _context.Dispose();
-            }
-        }
-
-        // Development
-        //private static readonly string connectionString = string.Format("DefaultEndpointsProtocol=https;AccountName=webportfolio;AccountKey={0}", Secrets.AzureAccessKey);
-
-        // Published
-        private static readonly string connectionString = Environment.GetEnvironmentVariable("CUSTOMCONNSTR_BlobStorage");
-
-        // GET: api/user/sas/
-        // Get a SAS token for public portfolio
-        [HttpGet]
-        [Route("sas")]
-        public ActionResult GetSasForPublicPortfolio()
-        {
-            // Storage account
-            var storageAccount = CloudStorageAccount.Parse(connectionString);
-
-            // Generate a SAS token for the user's container/object to Webportfolio's Storage Account
-            SharedAccessAccountPolicy policy = new SharedAccessAccountPolicy()
-            {
-                Permissions = SharedAccessAccountPermissions.Read,
-                Services = SharedAccessAccountServices.Blob,
-                ResourceTypes = SharedAccessAccountResourceTypes.Object,
-                SharedAccessStartTime = DateTime.UtcNow.AddHours(-1),
-                SharedAccessExpiryTime = DateTime.UtcNow.AddHours(1),
-                Protocols = SharedAccessProtocol.HttpsOnly
-            };
-            string sasToken = storageAccount.GetSharedAccessSignature(policy);
-
-            return Ok(sasToken);
-        }
-
-        private string AddSasToUser(WebPortfolioContext _context, string username)
-        {
-            // Search the user which has added recently
-            Users addedUser = (from u in _context.Users
-                               where u.Username == username
-                               select u).FirstOrDefault();
-
-            // Storage account
-            var storageAccount = CloudStorageAccount.Parse(connectionString);
-
-            // Generate a SAS token for the user's container/object to Webportfolio's Storage Account
-            SharedAccessAccountPolicy policy = new SharedAccessAccountPolicy()
-            {
-                Permissions = SharedAccessAccountPermissions.Write |
-                              SharedAccessAccountPermissions.Create |
-                              SharedAccessAccountPermissions.Read |
-                              SharedAccessAccountPermissions.Delete |
-                              SharedAccessAccountPermissions.Add |
-                              SharedAccessAccountPermissions.List,
-                Services = SharedAccessAccountServices.Blob,
-                ResourceTypes = SharedAccessAccountResourceTypes.Object | SharedAccessAccountResourceTypes.Container,
-                SharedAccessStartTime = DateTime.UtcNow.AddHours(-1),
-                SharedAccessExpiryTime = DateTime.UtcNow.AddHours(1),
-                Protocols = SharedAccessProtocol.HttpsOnly,
-            };
-            string sasToken = storageAccount.GetSharedAccessSignature(policy);
-
-            // Save the SAS token to database
-            addedUser.SasToken = sasToken;
-            _context.SaveChanges();
-
-            return sasToken;
-        }
-
         // POST: api/user/passwordreset/{email}
-        // Send a message for password reset
+        // Send a message for the password reset
         [HttpPost]
         [Route("passwordreset/{email}")]
         public ActionResult SendResetPasswordEmail(string email)
@@ -512,7 +361,7 @@ namespace WebPortfolioCoreApi.Controllers
                     //string link = "http://localhost:3000/resetpassword/" + newToken;
 
                     // Published
-                    string link = "https://www.webportfolio.fi/resetpassword/" + newToken;
+                    string link = "https://dev.webportfolio.fi/resetpassword/" + newToken;
                     mail.Body = "<h3>Click the link below to reset your password</h3><br/><a href=" + link + ">Reset your password</a>";
 
                     client.Port = 587;
@@ -542,7 +391,7 @@ namespace WebPortfolioCoreApi.Controllers
         }
 
         // POST: api/user/passwordreset
-        // Reset a user´s password
+        // Reset the user´s password
         [HttpPost]
         [Route("passwordreset")]
         public ActionResult ResetPassword([FromBody] Passwords passwords)
@@ -605,6 +454,158 @@ namespace WebPortfolioCoreApi.Controllers
             {
                 _context.Dispose();
             }
+        }
+
+        // PUT: api/user/changepassword{userId}
+        // Change user's password
+        [HttpPut]
+        [Route("changepassword/{id}")]
+        public ActionResult ChangePassword(int id, [FromBody] Passwords passwords)
+        {
+            // Searching right user with ID
+            var user = _context.Users.Find(id);
+
+            // If old password is correct, password will be changed
+            if (CheckPassword(user, passwords.OldPassword))
+            {
+                try
+                {
+                    user.Password = passwords.NewPassword;
+                    _context.SaveChanges();
+
+                    return Ok("Password updated succesfully!");
+                }
+                catch (Exception ex)
+                {
+                    return BadRequest("Problem detected while deleting user. Error message: " + ex.Message);
+                }
+                finally
+                {
+                    _context.Dispose();
+                }
+            }
+            else
+            {
+                return NotFound("Wrong old password.");
+            }
+        }
+
+        // PUT: api/user/{userId}/{newThemeId}
+        // Change the theme of user's portfolio
+        [HttpPut]
+        [Route("{userId}/{newThemeId}")]
+        public ActionResult ChangeTheme(int userId, int newThemeId)
+        {
+            // Searching right user with ID
+            var user = _context.Users.Find(userId);
+
+            try
+            {
+                user.ThemeId = newThemeId;
+                _context.SaveChanges();
+
+                return Ok("Theme has changed succesfully!");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest("Problem detected while changing the theme for user's portfolio. Error message: " + ex.Message);
+            }
+            finally
+            {
+                _context.Dispose();
+            }
+        }
+
+        // DELETE: api/user/{userId}
+        // Delete an account
+        [HttpDelete]
+        [Route("{id}")]
+        public ActionResult DeleteAccount(int id)
+        {
+            try
+            {
+                if (id != 0)
+                {
+                    PortfolioContentController controller = new PortfolioContentController(_context);
+
+                    if (controller.DeletePortfolio(id))
+                    {
+                        // Searching right user with ID
+                        var user = _context.Users.Find(id);
+
+                        _context.Remove(user);
+                        _context.SaveChanges();
+                    }
+                }
+
+                return Ok("Account and all content has deleted succesfully!");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest("Problem detected while deleting user. Error message: " + ex.InnerException);
+            }
+            finally
+            {
+                _context.Dispose();
+            }
+        }
+
+        // Checks if old password is written correctly
+        public bool CheckPassword(Users user, string password)
+        {
+            string oldPassword = user.Password;
+
+            if (oldPassword == password)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        // Creates a 20 chars long key for token
+        public static string RandomString(int length)
+        {
+            Random random = new Random();
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789=?!_";
+            return new string(Enumerable.Repeat(chars, length).Select(s => s[random.Next(s.Length)]).ToArray());
+        }
+
+        // Add SAS token to user for a blob storage
+        private string AddSasToUser(WebPortfolioContext _context, string username)
+        {
+            // Search the user which has added recently
+            Users addedUser = (from u in _context.Users
+                               where u.Username == username
+                               select u).FirstOrDefault();
+
+            // Storage account
+            var storageAccount = CloudStorageAccount.Parse(connectionString);
+
+            // Generate a SAS token for the user's container/object to Webportfolio's Storage Account
+            SharedAccessAccountPolicy policy = new SharedAccessAccountPolicy()
+            {
+                Permissions = SharedAccessAccountPermissions.Write |
+                              SharedAccessAccountPermissions.Create |
+                              SharedAccessAccountPermissions.Read |
+                              SharedAccessAccountPermissions.Delete |
+                              SharedAccessAccountPermissions.Add |
+                              SharedAccessAccountPermissions.List,
+                Services = SharedAccessAccountServices.Blob,
+                ResourceTypes = SharedAccessAccountResourceTypes.Object | SharedAccessAccountResourceTypes.Container,
+                SharedAccessStartTime = DateTime.UtcNow.AddHours(-1),
+                SharedAccessExpiryTime = DateTime.UtcNow.AddHours(3),
+                Protocols = SharedAccessProtocol.HttpsOnly,
+            };
+            string sasToken = storageAccount.GetSharedAccessSignature(policy);
+
+            // Save the SAS token to database
+            addedUser.SasToken = sasToken;
+            _context.SaveChanges();
+
+            return sasToken;
         }
     }
 }

@@ -23,7 +23,7 @@ namespace WebPortfolioCoreApi.Controllers
         }
 
         // GET: api/socialmedia/{userId}
-        // Get all links to social media for user
+        // Get all the user's social media links
         [HttpGet]
         [Route("{id}")]
         public ActionResult GetLinks(int id)
@@ -52,7 +52,7 @@ namespace WebPortfolioCoreApi.Controllers
         }
 
         // POST: api/socialmedia/{userId}
-        // Add a new social media service links or update existing ones for user
+        // Add the new social media service links or update the existing ones for the user
         [HttpPost]
         [Route("{id}")]
         public ActionResult AddOrUpdateLinks(int id, [FromBody] JsonElement jsonElement)

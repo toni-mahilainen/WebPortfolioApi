@@ -25,7 +25,7 @@ namespace WebPortfolioCoreApi.Controllers
         }
 
         // GET: api/portfoliocontent/content/{userId}
-        // Get all portfolio basic content
+        // Get all the basic content for a portfolio
         [HttpGet]
         [Route("content/{id}")]
         public ActionResult GetContent(int id)
@@ -65,7 +65,7 @@ namespace WebPortfolioCoreApi.Controllers
         }
 
         // GET: api/portfoliocontent/emails/{userId}
-        // Get all users email addresses
+        // Get all email addresses for a user
         [HttpGet]
         [Route("emails/{id}")]
         public ActionResult GetEmails(int id)
@@ -137,10 +137,6 @@ namespace WebPortfolioCoreApi.Controllers
         {
             try
             {
-                //int userId = (from u in _context.Users
-                //              where u.Username == username
-                //              select u.UserId).FirstOrDefault();
-
                 var user = (from u in _context.Users
                             where u.Username == username
                             select u).FirstOrDefault();
@@ -151,7 +147,7 @@ namespace WebPortfolioCoreApi.Controllers
                     UserId = user.UserId,
                     Firstname = "",
                     Lastname = "",
-                    Birthdate = new DateTime(1900, 01, 01),
+                    Birthdate = new DateTime(1990, 01, 01),
                     City = "",
                     Country = "",
                     Phonenumber = "",
@@ -204,7 +200,7 @@ namespace WebPortfolioCoreApi.Controllers
         }
 
         // POST: api/portfoliocontent/emails/{userId}
-        // Add email addresses to user
+        // Add the email addresses to a user
         [HttpPost]
         [Route("emails/{id}")]
         public ActionResult AddEmails(int id, [FromBody] JsonElement jsonElement)
@@ -243,7 +239,7 @@ namespace WebPortfolioCoreApi.Controllers
         }
 
         // PUT: api/portfoliocontent/content/{userId}
-        // Update users portfolio content
+        // Update the user's portfolio content
         [HttpPut]
         [Route("content/{id}")]
         public ActionResult UpdateContent(int id, [FromBody] PortfolioContent newContent)
@@ -287,7 +283,7 @@ namespace WebPortfolioCoreApi.Controllers
         }
 
         // PUT: api/portfoliocontent/emails
-        // Update users email address
+        // Update the user's email address
         [HttpPut]
         [Route("emails")]
         public ActionResult UpdateEmails([FromBody] JsonElement jsonElement)

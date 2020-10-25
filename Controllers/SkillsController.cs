@@ -23,7 +23,7 @@ namespace WebPortfolioCoreApi.Controllers
         }
 
         // GET: api/skills/{userId}
-        // Get all users skills
+        // Get all the user skills
         [HttpGet]
         [Route("{id}")]
         public ActionResult GetSkills(int id)
@@ -52,7 +52,7 @@ namespace WebPortfolioCoreApi.Controllers
         }
 
         // POST: api/skills/{userId}
-        // Add/update users skills to database
+        // Add/update the user's skills to database
         [HttpPost]
         [Route("{id}")]
         public ActionResult AddOrUpdateSkills(int id, [FromBody] JsonElement jsonElement)
